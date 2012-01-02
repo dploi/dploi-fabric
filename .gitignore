@@ -7,3 +7,4 @@ README.html
 /include
 *.egg
 .Python
+docs/_build
