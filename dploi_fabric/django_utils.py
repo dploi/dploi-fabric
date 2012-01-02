@@ -11,6 +11,7 @@ from pprint import pformat
 from fabric.operations import run
 
 def django_exec(dictionary = {}, tool="buildout"):
+    # TODO: Remove this and change dependants to use utils.config
     config = ConfigParser.RawConfigParser()
     config_file = os.path.join(env.path, "config.ini")
     django_base = "." # default to current dir
@@ -42,7 +43,7 @@ def django_exec(dictionary = {}, tool="buildout"):
     dictionary['checkout_tool'] = tool
     return dictionary
     
-def django_settings_file(dictionary = {}): # TODO: Make docs for this!
+def django_settings_file(dictionary = {}): # TODO: Remove this and change dependants to use utils.config
     return django_exec().get("django_settings")
 
 @task
@@ -54,6 +55,7 @@ def manage(*args):
     
 @task
 def collectstatic(staticdir='static'): # As defined in puppet config
+    # TODO: Use utils.config
     run(('cd %(path)s; mkdir -p ' + staticdir) % env)
     manage("collectstatic", "--noinput", "--link")
     

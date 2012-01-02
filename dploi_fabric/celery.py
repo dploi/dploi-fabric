@@ -30,4 +30,5 @@ redirect_stderr=True
 """
 
 def use_celery():
+    # TODO: remove
     return config_ini.config_parser.has_section("celery")

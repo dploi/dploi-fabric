@@ -9,6 +9,7 @@ from nginx import update_config_file as nginx_update_config_file
 import django_utils
 @task
 def init():
+    # TODO: Use utils.config (after checkout)
     if files.exists(os.path.join(env.path, 'bin')):
         print "buildout environment exists already"
         return

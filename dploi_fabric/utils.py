@@ -128,6 +128,12 @@ class _AttributeDict(dict):
                 return value
 
 class Configuration(object):
+    """
+    This class is the only correct source of information for this project.
+    To reduce the amount of times config.ini is downloaded, it should always
+    be used from utils.config, which is an instance of Configuration
+    """
+    #: Default values for the configuration
     defaults = {
         'django': {
             'base': '.',
@@ -148,6 +154,10 @@ class Configuration(object):
         },
     }
     def load_sites(self, config_file_content=None, env_dict=None):
+        """
+        Called from self.sites and returns a dictionary with the different sites
+        and their individual settings.
+        """
         if not config_file_content:
             config_file = os.path.join(env.path, "config.ini")
             if exists(config_file):
@@ -225,6 +235,18 @@ class Configuration(object):
         return self._sites
 
     def processes(self, site, env_dict):
+        """
+        Returns a dictionary of dictionaries each having the following keys:
+
+        * command
+            command to be run by supervisor
+        * port
+            port number,
+        * socket
+            path to unix socket
+        * type
+            gunicorn/memcached/celeryd
+        """
         process_dict = {}
         site_dict = self.sites[site]
         django_args = " ".join(site_dict.get("django").get("args", []))
@@ -255,10 +277,11 @@ class Configuration(object):
         return process_dict
 
     def deployment(self, site, env_dict):
-
-        ###################
-        # Deployment dict #
-        ###################
+        """
+        Here we add the information from deployments.py and merge it into our site dictionaries.
+        Can also be used to output warnings to the user, if he is using an old deployments.py
+        format.
+        """
         deployment_dict = {
             # Old settings
             'servername': env_dict.get("host_string"),
@@ -315,12 +338,20 @@ class Configuration(object):
         return {'deployment': deployment_dict, 'celery': celery_dict}
 
     def django_manage(self, command, site="main"):
+        """
+        Wrapper around the commands to inject the correct pythonpath.
+
+        Example: django_manage("migrate"), could result in
+
+        export PYTONPATH=/home/app-dev/app/; /home/app-dev/app/bin/python /home/app-dev/app/manage.py migrate
+        """
         site_dict = config.sites[site]
         cmd = site_dict.get("django").get("cmd")
         django_args = " ".join(site_dict.get("django").get("args", []))
         run('export PYTHONPATH=%s; %s %s %s' % (site_dict.get("deployment").get("path"), cmd, command, django_args))
 
 if not __name__ == '__main__':
+    #: A shared instance of configuration, always to be used
     config = Configuration()
 
 
@@ -332,9 +363,7 @@ def check_config():
 
 @task
 def uname():
-    print env.hosts
-    from pprint import pprint
-    pprint(env)
+    print env.host_string
     run('uname -a')
 
 @task
@@ -352,8 +381,9 @@ def ps():
 def download_media(to_dir="./tmp/media/", from_dir="../upload/"):
     """
     Downloads media from a remote folder, default ../uploads/ -> ./tmp/media/
-    Example: upload_media:from_dir="py_src/project/media/"
-        """
+    
+    * Example: upload_media:from_dir="py_src/project/media/"
+    """
     print "Downloading media from", env.host_string
     env.from_dir = from_dir
     local('rsync -avz --no-links --progress --exclude=".svn" -e "ssh" %(user)s@%(host_string)s:"%(path)s/%(from_dir)s"' % env + " " +to_dir)
@@ -362,7 +392,8 @@ def download_media(to_dir="./tmp/media/", from_dir="../upload/"):
 def upload_media(from_dir="./tmp/media/", to_dir="../upload/"):
     """
     Uploads media from a local folder, default ./tmp/media -> ../uploads/
-    Example: upload_media:to_dir="py_src/project/media/"
+    
+    * Example: upload_media:to_dir="py_src/project/media/"
     """
     print "Uploading media to", env.host_string
     env.to_dir = to_dir

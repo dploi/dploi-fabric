@@ -1,7 +1,7 @@
 import ConfigParser
 import StringIO
 import unittest
-from .utils import EnvConfigParser, Configuration, _AttributeDict, STATIC_COLLECTED
+from dploi_fabric.utils import EnvConfigParser, Configuration, _AttributeDict, STATIC_COLLECTED
 
 class TestConfigurationTestCase(unittest.TestCase):
     test_config = """
