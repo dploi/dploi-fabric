@@ -1,0 +1,9 @@
+README.html
+*.pyc
+/dist
+/Django*
+/Fabric*
+/lib
+/include
+*.egg
+.Python
