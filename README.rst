@@ -50,12 +50,12 @@ Usage
       settings = {
           'dev': {
               'hosts': ['yourserver.com'],
-              'path': '/home/awesome-new-website-dev/app/',
+              'path': '/home/awesome_new_website-dev/app/',
               'user': 'awesome_new_website-dev',
               'buildout_cfg': 'server_dev.cfg',
               'repo': 'git@github.com:youruser/awesome_new_website.git',
               'branch': 'master',
-              'backup_dir': '/home/awesome-new-website-dev/tmp/', # Used for mysql/psql dumps
+              'backup_dir': '/home/awesome_new_website-dev/tmp/', # Used for mysql/psql dumps
               'db_name': 'awesome_new_website-dev',
               'db_username': 'awesome_new_website-dev',
               'domains': ['sitename-dev.agency.com', 'www.sitename.com'],
