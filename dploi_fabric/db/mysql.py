@@ -1,5 +1,5 @@
 from fabric.tasks import Task
-from .db.base import DumpDatabaseTask, DownloadDatabase
+from dploi_fabric.db.base import DumpDatabaseTask, DownloadDatabase
 
 class MysqlDumpDatabaseTask(DumpDatabaseTask, Task):
     """
