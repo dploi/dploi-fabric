@@ -321,6 +321,11 @@ class Configuration(object):
             print(DOMAIN_DICT_DEPRECATION_WARNING)
         elif type(env_dict.get("domains")) == dict:
             domains = env_dict.get("domains")
+        elif env_dict.get("domains") == None:
+            domains = {
+                "main": [],
+            }
+            print("Warning: No domains supplied in settings, ignoring.")
         else:
             raise Exception("Invalid domain format")
         deployment_dict.update({'domains': domains})
