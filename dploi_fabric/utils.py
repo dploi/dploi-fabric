@@ -39,6 +39,10 @@ class Configuration(object):
         'static': {
 
         },
+        'redis': {
+            'enabled': True,
+            'appendonly': 'no',
+        },
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -161,6 +165,13 @@ class Configuration(object):
                     'socket': None,
                     'type': 'celeryd'
                 }
+        if site_dict.get("redis").get("enabled"):
+            process_dict["%s_%s_redis" % (env_dict.get("user"), site)] = {
+                'command': "/usr/bin/redis-server %s" % posixpath.normpath(posixpath.join(env_dict.get('path'), '..', 'config', 'redis_%s_%s.conf' % (env_dict.get('user'), site))),
+                'port': None,
+                'socket': None,
+                'type': 'celeryd'
+            }
         return process_dict
 
     def deployment(self, site, env_dict):
