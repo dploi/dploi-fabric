@@ -1,131 +1,18 @@
-import ConfigParser
+import os
+import posixpath
+
 import StringIO
 from fabric.operations import run, local
 from fabric.api import task, env, get
-import os
 from fabric.contrib.files import exists
-import unittest
-import posixpath
-from .messages import DOMAIN_DICT_DEPRECATION_WARNING, EXCEPTION
+from fabric.state import _AttributeDict
+
+
+from dploi_fabric.toolbox.datastructures import EnvConfigParser
+from dploi_fabric.messages import DOMAIN_DICT_DEPRECATION_WARNING
 
 STATIC_COLLECTED = "../static/"
 DATA_DIRECTORY = "../uploads/"
-
-
-class EnvConfigParser(ConfigParser.SafeConfigParser):
-    """ A config parser that can handle "namespaced" sections. Example:
-
-    [base]
-    name = base
-
-    [base:some-env]
-    name = some-env
-
-    """
-
-    def _concat(self, parent, child):
-        return '%s:%s' % (parent, child)
-
-    def items(self, section, raw=False, vars=None, env=None):
-        items = {}
-        try:
-            items.update(dict(ConfigParser.SafeConfigParser.items(self, section, raw, vars)))
-        except ConfigParser.NoSectionError:
-            pass
-        if env:
-            try:
-                env_items = dict(ConfigParser.SafeConfigParser.items(self, self._concat(section, env), raw, vars))
-                items.update(env_items)
-            except ConfigParser.NoSectionError:
-                pass
-        if not items:
-            raise ConfigParser.NoSectionError(self._concat(section, env) if env else section)
-        return tuple(items.iteritems())
-
-    def get(self, section, option, raw=False, vars=None, env=None):
-        if env and self.has_section(self._concat(section, env)):
-            try:
-                return ConfigParser.SafeConfigParser.get(self, self._concat(section, env), option, raw, vars)
-            except ConfigParser.NoOptionError:
-                if not self.has_section(section):
-                    raise
-        return ConfigParser.SafeConfigParser.get(self, section, option, raw, vars)
-
-    def _get(self, section, conv, option, env=None):
-        return conv(self.get(section, option, env=env))
-
-    def getint(self, section, option, env=None):
-        return self._get(section, int, option, env)
-
-    def getfloat(self, section, option, env=None):
-        return self._get(section, float, option, env)
-
-    def getboolean(self, section, option, env=None):
-        v = self.get(section, option, env=env)
-        if v.lower() not in self._boolean_states:
-            raise ValueError, 'Not a boolean: %s' % v
-        return self._boolean_states[v.lower()]
-
-    def has_section(self, section, env=None, strict=False):
-        if not env:
-            return ConfigParser.SafeConfigParser.has_section(self,section)
-        return (
-            (not strict and ConfigParser.SafeConfigParser.has_section(self, section)) or
-            ConfigParser.SafeConfigParser.has_section(self, self._concat(section, env))
-        )
-
-    def section_namespaces(self, section):
-        namespaces = []
-        for s in self.sections():
-            s = s.split(":")
-            if s[0] == section:
-                if len(s) == 1:
-                    namespaces.append("main")
-                else:
-                    namespaces.append(s[1])
-        return namespaces
-
-    def _interpolate(self, section, option, rawval, vars):
-        return rawval
-
-
-class _AttributeDict(dict):
-    """
-    Dictionary subclass enabling attribute lookup/assignment of keys/values.
-
-    For example::
-
-        >>> m = _AttributeDict({'foo': 'bar'})
-        >>> m.foo
-        'bar'
-        >>> m.foo = 'not bar'
-        >>> m['foo']
-        'not bar'
-
-    ``_AttributeDict`` objects also provide ``.first()`` which acts like
-    ``.get()`` but accepts multiple keys as arguments, and returns the value of
-    the first hit, e.g.::
-
-        >>> m = _AttributeDict({'foo': 'bar', 'biz': 'baz'})
-        >>> m.first('wrong', 'incorrect', 'foo', 'biz')
-        'bar'
-
-    """
-    def __getattr__(self, key):
-        try:
-            return self[key]
-        except KeyError:
-            # to conform with __getattr__ spec
-            raise AttributeError(key)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-    def first(self, *names):
-        for name in names:
-            value = self.get(name)
-            if value:
-                return value
 
 class Configuration(object):
     """
@@ -250,7 +137,7 @@ class Configuration(object):
         process_dict = {}
         site_dict = self.sites[site]
         django_args = " ".join(site_dict.get("django").get("args", []))
-        gunicorn_socket = posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site)) # Asserts pony project layout
+        gunicorn_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
 
         process_dict["%s_%s_gunicorn" % (env_dict.get("user"), site)] = {
                     'command': "%s run_gunicorn -w 2 -b unix:%s %s" % (site_dict.django['cmd'], gunicorn_socket, django_args),
@@ -259,7 +146,7 @@ class Configuration(object):
                     'type': 'gunicorn'
                 }
 
-        memcached_socket = posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site)) # Asserts pony project layout
+        memcached_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
 
         process_dict["%s_%s_memcached" % (env_dict.get("user"), site)] = {
                     'command': "memcached -s %s" % memcached_socket,
