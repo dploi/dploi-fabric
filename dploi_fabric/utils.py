@@ -166,11 +166,13 @@ class Configuration(object):
                     'type': 'celeryd'
                 }
         if site_dict.get("redis").get("enabled"):
-            process_dict["%s_%s_redis" % (env_dict.get("user"), site)] = {
-                'command': "/usr/bin/redis-server %s" % posixpath.normpath(posixpath.join(env_dict.get('path'), '..', 'config', 'redis_%s_%s.conf' % (env_dict.get('user'), site))),
+            process_name = "%s_%s_redis" % (env_dict.get("user"), site)
+            redis_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", process_name + ".sock" )) # Asserts pony project layout
+            process_dict[process_name] = {
+                'command': "/usr/bin/redis-server %s" % posixpath.normpath(posixpath.join(env_dict.get('path'), '..', 'config', process_name + '.conf')),
                 'port': None,
-                'socket': None,
-                'type': 'celeryd'
+                'socket': redis_socket,
+                'type': 'redis'
             }
         return process_dict
 
