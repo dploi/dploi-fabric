@@ -1,30 +1,19 @@
 import StringIO
 from fabric.decorators import task
 from fabric.api import run, put
-from django.template import Context, Template
-from .utils import config
+
+from dploi_fabric.toolbox.template import render_template
+from dploi_fabric.utils import config
 
 @task
 def update_config_file():
-    SUPERVISOR_TEMPLATE = """
-[program:{{ process_name }}]
-command={{ process_cmd }}
-directory={{ deployment.path }}../
-user={{ deployment.user }}
-autostart=True
-autorestart=True
-redirect_stderr=True
-environment=PYTHONPATH="{{ deployment.path }}",
-"""
-    output = ""
-    template = Template(SUPERVISOR_TEMPLATE)
+    template = 'templates/supervisor/supervisor.conf'
+    output = ''
     for site, site_config in config.sites.items():
         for process_name, process_dict in site_config.processes.items():
             context_dict = site_config
             context_dict.update({'process_name': process_name, 'process_cmd': process_dict["command"], 'socket': process_dict["socket"]})
-            context = Context(context_dict)
-            output += template.render(context)
-
+            output += render_template(template, context_dict)
     put(StringIO.StringIO(output), '%(path)s/../config/supervisor.conf' % config.sites["main"].deployment)
     update()
 
