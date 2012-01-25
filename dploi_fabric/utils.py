@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import posixpath
 
@@ -35,6 +36,8 @@ class Configuration(object):
             'enabled': False,
             'concurrency': 1,
             'maxtasksperchild': 500,
+            'loglevel': 'WARNING',
+            'celerycam': False,
         },
         'static': {
 
@@ -160,10 +163,27 @@ class Configuration(object):
                 }
         if site_dict.get("celery").get("enabled"):
             process_dict["%s_%s_celeryd" % (env_dict.get("user"), site)] = {
-                    'command': "%s celeryd -E -B -c %s --maxtasksperchild %s %s" % (site_dict.django['cmd'], site_dict.get("celery").get("concurrency"), site_dict.get("celery").get("maxtasksperchild"), django_args),
+                    'command': "%s celeryd -E -B -c %s --maxtasksperchild %s --loglevel=%s %s" % (
+                        site_dict.django['cmd'],
+                        site_dict.get("celery").get("concurrency"),
+                        site_dict.get("celery").get("maxtasksperchild"),
+                        site_dict.get("celery").get("loglevel"),
+                        django_args
+                    ),
                     'port': None,
                     'socket': None,
                     'type': 'celeryd'
+                }
+            if site_dict.get("celery").get("celerycam"):
+                process_dict["%s_%s_celerycam" % (env_dict.get("user"), site)] = {
+                    'command': "%s celerycam --loglevel=%s %s" % (
+                        site_dict.django['cmd'],
+                        site_dict.get("celery").get("loglevel"),
+                        django_args
+                    ),
+                    'port': None,
+                    'socket': None,
+                    'type': 'celerycam'
                 }
         if site_dict.get("redis").get("enabled"):
             process_name = "%s_%s_redis" % (env_dict.get("user"), site)
