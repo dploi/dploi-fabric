@@ -1,3 +1,4 @@
 include metadata.py
 include README.rst
 include MANIFEST.in
+recursive-include dploi_fabric/templates *
