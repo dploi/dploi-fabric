@@ -2,7 +2,7 @@
 import os
 
 from django.conf import settings
-from django.template.base import Template
+from django.template import Template
 from django.template.context import Context
 
 import dploi_fabric
