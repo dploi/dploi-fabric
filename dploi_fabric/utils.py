@@ -222,6 +222,8 @@ class Configuration(object):
             'ssl': env.get('ssl', False),
             'ssl_cert_path': os.path.join(env_dict.get("path"), env_dict.get('ssl_cert_path', None) or ""),
             'ssl_key_path': os.path.join(env_dict.get("path"), env_dict.get('ssl_key_path', None) or ""),
+
+            'home': '/home/%s' %  env_dict.get("user"),
         }
 
         if not env_dict.get("databases"):
