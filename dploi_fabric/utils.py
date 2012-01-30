@@ -42,9 +42,12 @@ class Configuration(object):
 
         },
         'redis': {
-            'enabled': True,
+            'enabled': False,
             'appendonly': 'no',
         },
+        'processes': {
+
+        }
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -74,7 +77,7 @@ class Configuration(object):
                 attr_dict[key] = _AttributeDict(value.copy())
             for section in config.sections():
                 section = section.split(":")[0]
-                if type(self.defaults.get(section)) == type(None):
+                if self.defaults.get(section) is None:
                     print "Caution: Section %s is not supported, skipped" % section
                     continue
                 for option, default_value in config.items(section, env=site):
@@ -193,6 +196,17 @@ class Configuration(object):
                 'socket': redis_socket,
                 'type': 'redis'
             }
+        if site_dict.get('processes'):
+            processes = site_dict.get('processes')
+            for process, command in processes.iteritems():
+                process_name = "%s_%s_process_%s" % (env_dict.get("user"), site, process)
+                process_dict[process_name] = {
+                    'command': posixpath.join(env_dict.get("path"), command),
+                    'port': None,
+                    'socket': None,
+                    'type': 'supervisor'
+                }
+
         return process_dict
 
     def deployment(self, site, env_dict):
