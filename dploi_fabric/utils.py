@@ -12,7 +12,7 @@ from dploi_fabric.toolbox.datastructures import EnvConfigParser
 from dploi_fabric.messages import DOMAIN_DICT_DEPRECATION_WARNING
 
 STATIC_COLLECTED = "../static/"
-DATA_DIRECTORY = "../uploads/"
+DATA_DIRECTORY = "../upload/"
 
 class Configuration(object):
     """
