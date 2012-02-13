@@ -39,6 +39,9 @@ def update():
     run("cd %(path)s; git reset --hard" % env)
     run("cd %(path)s; git checkout %(branch)s" % env)
     run("cd %(path)s; git pull origin %(branch)s" % env)
+    if exists(posixpath.join(env.path, ".gitmodules")):
+        run("cd %(path)s; git submodule init" % env)
+        run("cd %(path)s; git submodule update" % env)
     append_settings()
 
 @task

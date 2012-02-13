@@ -3,6 +3,7 @@ import os
 from fabric.api import env, task, prompt, run, put
 from fabric.contrib import files
 from .django_utils import django_exec
+from dploi_fabric import git
 from github import upload_ssh_deploy_key
 from supervisor import update_config_file as supervisor_update_config_file
 from nginx import update_config_file as nginx_update_config_file
@@ -18,6 +19,7 @@ def init():
     run('mkdir -p %(path)s' % env)
     if env.repo.startswith('git'):
         run('cd %(path)s; git clone -b %(branch)s %(repo)s .' % env)
+        git.update()
     elif env.repo.startswith('ssh+svn'):
         run('cd %(path)s; svn co %(repo)s' % env)
     tool = django_exec().get("checkout_tool")
