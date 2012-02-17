@@ -149,7 +149,7 @@ class Configuration(object):
         gunicorn_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
 
         process_dict["%s_%s_gunicorn" % (env_dict.get("user"), site)] = {
-                    'command': "%s run_gunicorn -w 2 -b unix:%s %s" % (site_dict.django['cmd'], gunicorn_socket, django_args),
+                    'command': "%s run_gunicorn %s -w 2 -b unix:%s" % (site_dict.django['cmd'], django_args, gunicorn_socket),
                     'port': None,
                     'socket': gunicorn_socket,
                     'type': 'gunicorn'
@@ -165,12 +165,12 @@ class Configuration(object):
                 }
         if site_dict.get("celery").get("enabled"):
             process_dict["%s_%s_celeryd" % (env_dict.get("user"), site)] = {
-                    'command': "%s celeryd -E -B -c %s --maxtasksperchild %s --loglevel=%s %s" % (
+                    'command': "%s celeryd %s -E -B -c %s --maxtasksperchild %s --loglevel=%s" % (
                         site_dict.django['cmd'],
+                        django_args,
                         site_dict.get("celery").get("concurrency"),
                         site_dict.get("celery").get("maxtasksperchild"),
                         site_dict.get("celery").get("loglevel"),
-                        django_args
                     ),
                     'port': None,
                     'socket': None,
@@ -178,10 +178,10 @@ class Configuration(object):
                 }
             if site_dict.get("celery").get("celerycam"):
                 process_dict["%s_%s_celerycam" % (env_dict.get("user"), site)] = {
-                    'command': "%s celerycam --loglevel=%s %s" % (
+                    'command': "%s celerycam %s --loglevel=%s" % (
                         site_dict.django['cmd'],
+                        django_args,
                         site_dict.get("celery").get("loglevel"),
-                        django_args
                     ),
                     'port': None,
                     'socket': None,
@@ -243,9 +243,11 @@ class Configuration(object):
         if not env_dict.get("databases"):
             deployment_dict["databases"] = {
                 'default': {
-                    'ENGINE': "django.db.backends.postgresql_psycopg2",
+                    'ENGINE': env_dict.get("db_engine", "django.db.backends.postgresql_psycopg2"),
                     'NAME': env_dict.get("db_name"),
                     'USER': env_dict.get("db_username"),
+                    'PASSWORD': env_dict.get("db_password"),
+                    'HOST': env_dict.get("db_host", "localhost"),
                 }
             }
 

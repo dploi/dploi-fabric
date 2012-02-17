@@ -72,8 +72,25 @@ def append_settings():
         output.seek(0)
         manual_settings = output.read()
 
+        # START OF DIRTY DATABASE HACK
+
+
+        additional_settings = """if "DATABASES" in locals():\n"""
         # DATABASES
-        additional_settings = "DATABASES = %s\n" % pformat(config.sites["main"].get("deployment").get("databases"))
+        #additional_settings = "DATABASES = %s\n" % pformat(config.sites["main"].get("deployment").get("databases"))
+        additional_settings +="    DATABASES = %s\n" % pformat(config.sites["main"].get("deployment").get("databases"))
+
+        db_old_dict = config.sites["main"].get("deployment").get("databases")["default"]
+        db_old_dict["ENGINE"] = db_old_dict["ENGINE"].replace("django.db.backends.", "")
+        additional_settings += """else:
+    DATABASE_ENGINE = "%(ENGINE)s"
+    DATABASE_NAME = "%(NAME)s"
+    DATABASE_USER = "%(USER)s"
+    DATABASE_PASSWORD = "%(PASSWORD)s"
+    DATABASE_HOST = "%(HOST)s"
+""" % db_old_dict
+
+        # // END OF DIRTY DATABASE HACK
 
         # CACHES
         processes = config.sites["main"].get("processes")
