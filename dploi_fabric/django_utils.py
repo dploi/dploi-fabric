@@ -91,7 +91,7 @@ STATIC_ROOT = "%(static_root)s"
 MEDIA_ROOT = "%(media_root)s"
 """ % {
             'static_root': posixpath.join(site_config.get("deployment").get("path"), STATIC_COLLECTED),
-            'media_root': posixpath.join(site_config.get("deployment").get("path"), DATA_DIRECTORY),
+            'media_root': posixpath.join(site_config.get("deployment").get("path"), DATA_DIRECTORY, 'media/'),
         }
 
         output = StringIO.StringIO()
