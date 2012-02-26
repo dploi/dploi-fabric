@@ -247,7 +247,7 @@ class Configuration(object):
                     'NAME': env_dict.get("db_name"),
                     'USER': env_dict.get("db_username"),
                     'PASSWORD': env_dict.get("db_password"),
-                    'HOST': env_dict.get("db_host", "localhost"),
+                    'HOST': env_dict.get("db_host", ""),
                 }
             }
 
