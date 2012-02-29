@@ -9,7 +9,7 @@ class PostgreDumpDatabaseTask(DumpDatabaseTask, Task):
     name = 'dump'
 
     def get_command(self, env, file_name):
-        return ('pg_dump --username="%(db_username)s" "%(db_name)s" > ' % env) + file_name
+        return ('pg_dump --no-owner --username="%(db_username)s" "%(db_name)s" > ' % env) + file_name
 
 dump = PostgreDumpDatabaseTask()
 download = DownloadDatabase(dump_task=dump)
