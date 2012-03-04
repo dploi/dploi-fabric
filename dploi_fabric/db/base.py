@@ -11,7 +11,7 @@ class DumpDatabaseTask(object):
     def get_command(self, env, file_name):
         raise NotImplementedError
 
-    def run(self, reason='unknown', compress=False):
+    def run(self, reason='unknown', compress=False, **kwargs):
         file_name = self.get_path(env, reason)
         command = self.get_command(env, file_name)
         run(command)
