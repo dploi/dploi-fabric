@@ -47,6 +47,9 @@ class Configuration(object):
         },
         'processes': {
 
+        },
+        'sendfile': {
+
         }
     }
     def load_sites(self, config_file_content=None, env_dict=None):
@@ -258,7 +261,7 @@ class Configuration(object):
             print(DOMAIN_DICT_DEPRECATION_WARNING)
         elif type(env_dict.get("domains")) == dict:
             domains = env_dict.get("domains")
-        elif env_dict.get("domains") == None:
+        elif env_dict.get("domains") is None:
             domains = {
                 "main": [],
             }
