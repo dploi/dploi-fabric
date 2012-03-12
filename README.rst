@@ -95,6 +95,7 @@ and/or
 
 Other options
 -------------
+
    [checkout]
 
    tool = buildout (default)
@@ -123,3 +124,6 @@ Other options
    (see above)
 
    /url-path/ = rel-path-filesystem/
+
+    [sendfile]
+    /protected/media/ = ../upload/
