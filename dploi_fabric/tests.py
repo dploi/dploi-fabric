@@ -59,7 +59,7 @@ enabled=true""", self.env_dict)
         self.assertEqual(config.get("celery").get("concurrency"), 32)
         self.assertEqual(config.get("celery").get("maxtasksperchild"), 500)
         self.assertTrue("%s_%s_celeryd" % (config.deployment.get("user"), "main") in config.get("processes"))
-        self.assertTrue("celeryd -E -B -c 32 --maxtasksperchild 500" in config.get("processes").get("%s_%s_celeryd" % (config.deployment.get("user"), "main")).get("command"))
+        self.assertIn("celeryd  -E -B -c 32 --maxtasksperchild 500", config.get("processes").get("%s_%s_celeryd" % (config.deployment.get("user"), "main")).get("command"))
 
     def test_static(self):
         self.assertEqual(self.sites["main"].get("static").get("/static/"), STATIC_COLLECTED)
