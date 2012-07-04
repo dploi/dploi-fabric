@@ -50,7 +50,10 @@ class Configuration(object):
         },
         'sendfile': {
 
-        }
+        },
+        'environment': {
+
+        },
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -124,6 +127,7 @@ class Configuration(object):
                     attr_dict["django"]["args"].append(" --settings=%s" % ('_gen.settings', ))
 
             attr_dict.update({'processes': self.processes(site, env_dict)})
+            attr_dict['environment'] = self.environment(site, env_dict)
             self._sites[site] = _AttributeDict(attr_dict)
         return self._sites
 
@@ -211,6 +215,10 @@ class Configuration(object):
                 }
 
         return process_dict
+
+    def environment(self, site, env_dict):
+        site_dict = self.sites[site]
+        return site_dict['environment']
 
     def deployment(self, site, env_dict):
         """
