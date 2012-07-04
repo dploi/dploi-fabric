@@ -128,6 +128,7 @@ class Configuration(object):
 
             attr_dict.update({'processes': self.processes(site, env_dict)})
             attr_dict['environment'] = self.environment(site, env_dict)
+            attr_dict['identifier'] = env_dict.identifier
             self._sites[site] = _AttributeDict(attr_dict)
         return self._sites
 
