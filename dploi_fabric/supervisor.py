@@ -1,4 +1,5 @@
 import StringIO
+from copy import copy
 from fabric.decorators import task
 from fabric.api import run, put
 
@@ -11,8 +12,13 @@ def update_config_file():
     output = ''
     for site, site_config in config.sites.items():
         for process_name, process_dict in site_config.processes.items():
-            context_dict = site_config
-            context_dict.update({'process_name': process_name, 'process_cmd': process_dict["command"], 'socket': process_dict["socket"]})
+            context_dict = copy(site_config)
+            env_dict = {
+                'HOME': site_config.deployment['home'],
+                'PYTHONPATH': site_config.deployment['path'],
+            }
+            env_dict.update(site_config.environment)
+            context_dict.update({'process_name': process_name, 'process_cmd': process_dict["command"], 'socket': process_dict["socket"], 'env': env_dict})
             output += render_template(template, context_dict)
     put(StringIO.StringIO(output), '%(path)s/../config/supervisor.conf' % config.sites["main"].deployment)
     update()
