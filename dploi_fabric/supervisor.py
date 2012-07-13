@@ -16,8 +16,6 @@ def update_config_file():
             env_dict = {
                 'HOME': site_config.deployment['home'],
                 'PYTHONPATH': site_config.deployment['path'],
-                'DEPLOYMENT_IDENTIFIER': site_config.identifier,
-                'DEPLOYMENT_SITE': site,
             }
             env_dict.update(site_config.environment)
             context_dict.update({'process_name': process_name, 'process_cmd': process_dict["command"], 'socket': process_dict["socket"], 'env': env_dict})
