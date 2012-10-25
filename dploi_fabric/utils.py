@@ -161,7 +161,8 @@ class Configuration(object):
                     'command': "%s run_gunicorn %s -w 2 -b unix:%s" % (site_dict.django['cmd'], django_args, gunicorn_socket),
                     'port': None,
                     'socket': gunicorn_socket,
-                    'type': 'gunicorn'
+                    'type': 'gunicorn',
+                    'priority': 100,
                 }
 
         memcached_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
@@ -170,7 +171,8 @@ class Configuration(object):
                     'command': "memcached -s %s" % memcached_socket,
                     'port': None,
                     'socket': memcached_socket,
-                    'type': 'memcached'
+                    'type': 'memcached',
+                    'priority': 60,
                 }
         if site_dict.get("celery").get("enabled"):
             process_dict["%s_%s_celeryd" % (env_dict.get("user"), site)] = {
@@ -183,7 +185,8 @@ class Configuration(object):
                     ),
                     'port': None,
                     'socket': None,
-                    'type': 'celeryd'
+                    'type': 'celeryd',
+                    'priority': 40,
                 }
             if site_dict.get("celery").get("celerycam"):
                 process_dict["%s_%s_celerycam" % (env_dict.get("user"), site)] = {
@@ -194,7 +197,8 @@ class Configuration(object):
                     ),
                     'port': None,
                     'socket': None,
-                    'type': 'celerycam'
+                    'type': 'celerycam',
+                    'priority': 50,
                 }
         if site_dict.get("redis").get("enabled"):
             process_name = "%s_%s_redis" % (env_dict.get("user"), site)
@@ -203,7 +207,8 @@ class Configuration(object):
                 'command': "/usr/bin/redis-server %s" % posixpath.normpath(posixpath.join(env_dict.get('path'), '..', 'config', process_name + '.conf')),
                 'port': None,
                 'socket': redis_socket,
-                'type': 'redis'
+                'type': 'redis',
+                'priority': 20,
             }
         if site_dict.get('processes'):
             processes = site_dict.get('processes')
@@ -213,7 +218,8 @@ class Configuration(object):
                     'command': posixpath.join(env_dict.get("path"), command),
                     'port': None,
                     'socket': None,
-                    'type': 'supervisor'
+                    'type': 'supervisor',
+                    'priority': env_dict.get("priority", 200),
                 }
 
         return process_dict
