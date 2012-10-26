@@ -12,7 +12,7 @@ from .utils import config
 
 @task
 def update():
-    test = run("cd %(path)s; git diff --stat --no-pager" % env)
+    test = run("cd %(path)s; git --no-pager diff --stat" % env)
     if "files changed" in test:
         print CAUTION
         print "You have local file changes to the git repository on the server. Run 'fab %s git.reset' to remove them, " \
@@ -46,7 +46,7 @@ def update():
 
 @task
 def diff(what=''):
-    run(("cd %(path)s; git diff --no-pager " + what) % env)
+    run(("cd %(path)s; git --no-pager diff " + what) % env)
 
 @task
 def status():
