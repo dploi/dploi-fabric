@@ -58,20 +58,23 @@ def status():
     Note: "status" does not yet support the group syntax
     """
     for site, site_config in config.sites.items():
+        group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl status %s' % process_name)
+            run('sudo supervisorctl status %s:%s' % (group_name, process_name))
 
 @task
 def add():
     for site, site_config in config.sites.items():
+        group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl add %s' % process_name)
+            run('sudo supervisorctl add %s:%s' % (group_name, process_name))
 
 @task
 def update():
     for site, site_config in config.sites.items():
+        group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl update %s' % process_name)
+            run('sudo supervisorctl update %s:%s' % (group_name, process_name))
 
 def get_group_name(site, site_config):
     return '%s-%s' % (site_config['deployment']['user'], site)
