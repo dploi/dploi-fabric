@@ -54,6 +54,9 @@ class Configuration(object):
         'environment': {
 
         },
+        'nginx': {
+            'client_max_body_size': '10m'
+        }
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
