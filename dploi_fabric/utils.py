@@ -256,7 +256,8 @@ class Configuration(object):
             'ssl_cert_path': os.path.join(env_dict.get("path"), env_dict.get('ssl_cert_path', None) or ""),
             'ssl_key_path': os.path.join(env_dict.get("path"), env_dict.get('ssl_key_path', None) or ""),
             'bind_ip': env_dict.get('bind_ip', '*'),
-
+            'static_error_pages': env_dict.get('static_error_pages', []),
+            'big_body_endpoints': env_dict.get('big_body_endpoints', []),
             'home': '/home/%s' %  env_dict.get("user"),
         }
 
