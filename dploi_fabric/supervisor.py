@@ -4,6 +4,7 @@ from fabric.decorators import task
 from fabric.api import run, put
 from dploi_fabric.toolbox.template import render_template
 from dploi_fabric.utils import config
+import posixpath
 
 @task
 def update_config_file():
@@ -18,7 +19,11 @@ def update_config_file():
             context_dict = copy(site_config)
             env_dict = {
                 'HOME': site_config.deployment['home'],
-                'PYTHONPATH': site_config.deployment['path'],
+                'USER': site_config.deployment['user'],
+                'PYTHONPATH': ":".join([
+                    site_config.deployment['path'],
+                    posixpath.join(site_config.deployment['path'], site_config.get("django").get("base")+'/'),
+                ]),
             }
             env_dict.update(site_config.environment)
             context_dict.update({
