@@ -2,16 +2,16 @@ import os
 
 from fabric.api import env, task, prompt, run, put
 from fabric.contrib import files
-from .django_utils import django_exec
 from dploi_fabric import git
 from github import upload_ssh_deploy_key
 from supervisor import update_config_file as supervisor_update_config_file
 from nginx import update_config_file as nginx_update_config_file
 import django_utils
 from .utils import config
+
+
 @task
 def init():
-    # TODO: Use utils.config (after checkout)
     if files.exists(os.path.join(env.path, 'bin')):
         print "buildout environment exists already"
         return
@@ -22,7 +22,7 @@ def init():
         git.update()
     elif env.repo.startswith('ssh+svn'):
         run('cd %(path)s; svn co %(repo)s' % env)
-    tool = django_exec().get("checkout_tool")
+    tool = config.sites['main'].get('checkout',{}).get('tool')
     if tool == "buildout":
         run('cd %(path)s; sh init.sh -c %(buildout_cfg)s' % env)
         django_utils.append_settings()
@@ -38,6 +38,7 @@ def init():
         django_utils.append_settings()
     supervisor_update_config_file()
     nginx_update_config_file()
+
 
 @task
 def upload_ssl():
