@@ -1,12 +1,13 @@
 import datetime
 from fabric.api import env, run, get
 from fabric.tasks import Task
+import os
 
 class DumpDatabaseTask(object):
     def get_path(self, env, reason):
         mytimestamp = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%S')
         reason = reason.replace(' ', '_')
-        return ('%(backup_dir)s/%(db_name)s-' + mytimestamp + '-' + reason + '.sql') % env
+        return os.path.join('%(backup_dir)s'  % env, '%(db_name)s-' % env + mytimestamp + '-' + reason + '.sql')
 
     def get_command(self, env, file_name, **flags):
         raise NotImplementedError
