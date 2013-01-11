@@ -132,9 +132,20 @@ class Configuration(object):
             attr_dict.update({'processes': self.processes(site, env_dict)})
             attr_dict['environment'] = self.environment(site, env_dict)
             attr_dict['environment'].setdefault('DEPLOYMENT_SITE', site)
+            if attr_dict['deployment']['django_settings_module']:
+                attr_dict['environment']['DJANGO_SETTINGS_MODULE'] = attr_dict['deployment']['django_settings_module']
+            attr_dict['environment_export'] = self.build_environment_export(attr_dict['environment'])
             attr_dict['identifier'] = env_dict.identifier
             self._sites[site] = _AttributeDict(attr_dict)
         return self._sites
+
+    def build_environment_export(self, environment):
+        """
+        takes a dict with environment variables and products a shell compatible export statement:
+        'export PYTHONPATH="stuff/here:more/here" USER="mysite-dev";'
+        """
+        vars = " ".join([u'%s=%s' % (key, value) for key, value in environment.items()])
+        return u"export %s;" % vars
 
     @property
     def sites(self):
@@ -246,6 +257,7 @@ class Configuration(object):
             'branch': env_dict.get("branch"),
             'user': env_dict.get("user"),
             'buildout_cfg': env_dict.get("buildout_cfg"),
+            'django_settings_module': env_dict.get("django_settings_module"),
             'generated_settings_path': posixpath.join(env_dict.get("path"), "_gen/settings.py"),
 
             # New settings
@@ -314,7 +326,7 @@ class Configuration(object):
         site_dict = config.sites[site]
         cmd = site_dict.get("django").get("cmd")
         django_args = " ".join(site_dict.get("django").get("args", []))
-        run('export PYTHONPATH=%s; %s %s %s' % (site_dict.get("deployment").get("path"), cmd, command, django_args))
+        run('%s %s %s %s' % (site_dict['environment_export'], cmd, command, django_args))
 
 if not __name__ == '__main__':
     #: A shared instance of configuration, always to be used
