@@ -50,6 +50,7 @@ Usage
       settings = {
           'dev': {
               'hosts': ['yourserver.com'],
+              'autostart': True,
               'path': '/home/awesome_new_website-dev/app/',
               'user': 'awesome_new_website-dev',
               'buildout_cfg': 'server_dev.cfg',

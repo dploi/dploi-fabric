@@ -1,7 +1,7 @@
 import StringIO
 from copy import copy
 from fabric.decorators import task
-from fabric.api import run, put
+from fabric.api import run, put, env
 from dploi_fabric.toolbox.template import render_template
 from dploi_fabric.utils import config
 import posixpath
@@ -32,6 +32,7 @@ def update_config_file():
                 'socket': process_dict["socket"],
                 'env': env_dict,
                 'priority': process_dict.get('priority', 200),
+                'autostart': 'True' if getattr(env, 'autostart', True) else 'False',
             })
             output += render_template(template, context_dict)
             groups[group_name].append(process_name)
