@@ -14,5 +14,5 @@ def create():
     """
     creates a virtualenv and calls update
     """
-    do_run('cd %(path)s; virtualenv . --system-site-packages' % config.sites["main"].deployment)
+    do_run('cd %(path)s; virtualenv . --system-site-packages --setuptools' % config.sites["main"].deployment)
     update()
