@@ -356,10 +356,10 @@ def ps():
     run('ps -f -u %(user)s | grep -v "ps -f" | grep -v sshd' % env)
 
 @task
-def download_media(to_dir="./tmp/media/", from_dir="../upload/"):
+def download_media(to_dir="./tmp/media/", from_dir="../upload/media/"):
     """
     Downloads media from a remote folder, default ../uploads/ -> ./tmp/media/
-    
+
     * Example: upload_media:from_dir="py_src/project/media/"
     """
     print "Downloading media from", env.host_string
@@ -367,7 +367,7 @@ def download_media(to_dir="./tmp/media/", from_dir="../upload/"):
     local('rsync -avz --no-links --progress --exclude=".svn" -e "ssh" %(user)s@%(host_string)s:"%(path)s/%(from_dir)s"' % env + " " +to_dir)
 
 @task
-def upload_media(from_dir="./tmp/media/", to_dir="../upload/"):
+def upload_media(from_dir="./tmp/media/", to_dir="../upload/media/"):
     """
     Uploads media from a local folder, default ./tmp/media -> ../uploads/
     
