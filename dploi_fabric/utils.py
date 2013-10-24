@@ -71,13 +71,16 @@ class Configuration(object):
         and their individual settings.
         """
         if not config_file_content:
-            config_file = os.path.join(env.path, "config.ini")
-            if exists(config_file):
-                output = StringIO.StringIO()
-                get(u"%s" % config_file, output)
-                output.seek(0)
+            if env.get("use_local_config_ini", False):
+                output = open("config.ini")
             else:
-                raise Exception("Missing config.ini, tried path %s" % config_file)
+                config_file = os.path.join(env.path, "config.ini")
+                if exists(config_file):
+                    output = StringIO.StringIO()
+                    get(u"%s" % config_file, output)
+                    output.seek(0)
+                else:
+                    raise Exception("Missing config.ini, tried path %s" % config_file)
         else:
             output = StringIO.StringIO(config_file_content)
 
@@ -323,10 +326,10 @@ class Configuration(object):
         ##############
 
         nginx_dict = self.sites[site].get("nginx")
-        nginx_dict["client_max_body_size"] = env_dict.get("nginx", {}).get("client_max_body_size", nginx_dict.get("client_max_body_size"))
+        nginx_dict["location_settings"] = {
+            "client_max_body_size": env_dict.get("nginx", {}).get("client_max_body_size", nginx_dict.get("client_max_body_size")),
+        }
         nginx_dict["template"] = env_dict.get("nginx", {}).get("template", nginx_dict.get("template"))
-        # adds all options in nginx except our special ones (for backwards compatibility)
-        nginx_dict["location_settings"] = dict({key: value for key, value in nginx_dict.items() if not key in ("template", "location_settings")})
 
         ##############
         # redis dict #
@@ -405,3 +408,8 @@ def upload_media(from_dir="./tmp/media/", to_dir="../upload/media/"):
     print "Uploading media to", env.host_string
     env.to_dir = to_dir
     local('rsync -avz --no-links --progress --exclude=".svn" '+ from_dir +' -e "ssh" %(user)s@%(host_string)s:"%(path)s/%(to_dir)s"' % env)
+
+
+@task
+def use_local_config_ini():
+    env.use_local_config_ini = True
