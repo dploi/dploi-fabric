@@ -7,7 +7,7 @@ from dploi_fabric.utils import config
 import posixpath
 
 @task
-def update_config_file():
+def update_config_file(dryrun=False):
     template = 'templates/supervisor/supervisor.conf'
     group_template = 'templates/supervisor/supervisor-group.conf'
     output = ''
@@ -37,8 +37,13 @@ def update_config_file():
             output += render_template(template, context_dict)
             groups[group_name].append(process_name)
     output += render_template(group_template, {'groups': groups})
-    put(StringIO.StringIO(output), '%(path)s/../config/supervisor.conf' % config.sites["main"].deployment)
-    update()
+    path = posixpath.abspath(posixpath.join(config.sites["main"].deployment['path'], '..', 'config', 'supervisor.conf'))
+    if dryrun:
+        print path + ':'
+        print output
+    else:
+        put(StringIO.StringIO(output), path)
+        update()
 
 @task
 def stop():

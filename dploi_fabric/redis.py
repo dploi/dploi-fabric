@@ -10,7 +10,7 @@ from dploi_fabric.utils import config
 
 
 @task
-def update_config_file():
+def update_config_file(dryrun=False):
     template_name = 'templates/redis/redis.conf'
     for site, site_config in config.sites.items():
         redis_processes = [(x, site_config.processes[x]) for x in site_config.processes if site_config.processes[x]["type"] == "redis"]
@@ -28,6 +28,11 @@ def update_config_file():
                 'process_name': process_name,
                 'socket': process['socket'],
             })
+            path = posixpath.abspath(posixpath.join(site_config['deployment']['path'], '..', 'config', process_name + '.conf'))
             output = render_template(template_name, context_dict)
-            put(StringIO.StringIO(output), posixpath.join(site_config['deployment']['path'], '..', 'config', process_name + '.conf'))
+            if dryrun:
+                print path + ":"
+                print output
+            else:
+                put(StringIO.StringIO(output), path)
 
