@@ -14,16 +14,15 @@ def reload_nginx():
 @task
 def update_config_file(dryrun=False):
     output = ""
-    template_name = 'templates/nginx/nginx.conf'
     for site, site_config in config.sites.items():
         context_dict = site_config
         context_dict.update({
             'domains': " ".join(site_config.deployment.get("domains")[site]),
             'www_processes': [site_config.processes[x] for x in site_config.processes if site_config.processes[x]["type"] == "gunicorn"],
         })
-
-        output += render_template(template_name, context_dict)
-    path = posixpath.abspath(posixpath.join(env.path, '..', 'config', 'nginx.conf')) 
+        template_path = context_dict['nginx']['template']
+        output += render_template(template_path, context_dict)
+    path = posixpath.abspath(posixpath.join(env.path, '..', 'config', 'nginx.conf'))
     if dryrun:
         print path + ':'
         print output

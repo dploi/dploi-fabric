@@ -11,9 +11,9 @@ from dploi_fabric.utils import config
 
 @task
 def update_config_file(dryrun=False):
-    template_name = 'templates/redis/redis.conf'
     for site, site_config in config.sites.items():
         redis_processes = [(x, site_config.processes[x]) for x in site_config.processes if site_config.processes[x]["type"] == "redis"]
+        template_path = site_config['redis']['template']
         print redis_processes
         for process_name, process in redis_processes:
             working_directoy = posixpath.normpath(posixpath.join(env.path, '..', 'data', 'redis', process_name))
@@ -29,7 +29,7 @@ def update_config_file(dryrun=False):
                 'socket': process['socket'],
             })
             path = posixpath.abspath(posixpath.join(site_config['deployment']['path'], '..', 'config', process_name + '.conf'))
-            output = render_template(template_name, context_dict)
+            output = render_template(template_path, context_dict)
             if dryrun:
                 print path + ":"
                 print output

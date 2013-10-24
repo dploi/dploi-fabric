@@ -1,3 +1,4 @@
+from dploi_fabric.toolbox.template import app_package_path
 import os
 import posixpath
 
@@ -44,6 +45,7 @@ class Configuration(object):
         'redis': {
             'enabled': False,
             'appendonly': 'no',
+            'template': app_package_path('templates/redis/redis.conf'),
         },
         'processes': {
 
@@ -55,8 +57,13 @@ class Configuration(object):
 
         },
         'nginx': {
-            'client_max_body_size': '10m'
-        }
+            'client_max_body_size': '10m',
+            'template': app_package_path('templates/nginx/nginx.conf'),
+        },
+        'supervisor': {
+            'template': app_package_path('templates/supervisor/supervisor.conf'),
+            'group_template': app_package_path('templates/supervisor/supervisor-group.conf'),
+        },
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -306,12 +313,32 @@ class Configuration(object):
         ###############
         # Celery dict #
         ###############
-
         celery_dict = self.sites[site].get("celery")
 
         celery_dict["concurrency"] = env_dict.get("celery", {}).get("concurrency", celery_dict.get("concurrency"))
         celery_dict["maxtasksperchild"] = env_dict.get("celery", {}).get("maxtasksperchild", celery_dict.get("maxtasksperchild"))
 
+        ##############
+        # nginx dict #
+        ##############
+
+        nginx_dict = self.sites[site].get("nginx")
+        nginx_dict["client_max_body_size"] = env_dict.get("nginx", {}).get("client_max_body_size", nginx_dict.get("client_max_body_size"))
+        nginx_dict["template"] = env_dict.get("nginx", {}).get("template", nginx_dict.get("template"))
+
+        ##############
+        # redis dict #
+        ##############
+
+        redis_dict = self.sites[site].get("redis")
+        redis_dict["template"] = env_dict.get("redis", {}).get("template", redis_dict.get("template"))
+
+        ###################
+        # supervisor dict #
+        ###################
+
+        supervisor_dict = self.sites[site].get("supervisor")
+        supervisor_dict["template"] = env_dict.get("supervisor", {}).get("template", supervisor_dict.get("template"))
 
         return {'deployment': deployment_dict, 'celery': celery_dict}
 

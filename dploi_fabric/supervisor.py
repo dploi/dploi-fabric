@@ -8,11 +8,11 @@ import posixpath
 
 @task
 def update_config_file(dryrun=False):
-    template = 'templates/supervisor/supervisor.conf'
-    group_template = 'templates/supervisor/supervisor-group.conf'
     output = ''
     groups = {}
     for site, site_config in config.sites.items():
+        template_path = site_config['supervisor']['template']
+        group_template_path = site_config['supervisor']['group_template']
         group_name = get_group_name(site, site_config)
         groups[group_name] = []
         for process_name, process_dict in site_config.processes.items():
@@ -34,9 +34,9 @@ def update_config_file(dryrun=False):
                 'priority': process_dict.get('priority', 200),
                 'autostart': 'True' if getattr(env, 'autostart', True) else 'False',
             })
-            output += render_template(template, context_dict)
+            output += render_template(template_path, context_dict)
             groups[group_name].append(process_name)
-    output += render_template(group_template, {'groups': groups})
+    output += render_template(group_template_path, {'groups': groups})
     path = posixpath.abspath(posixpath.join(config.sites["main"].deployment['path'], '..', 'config', 'supervisor.conf'))
     if dryrun:
         print path + ':'
