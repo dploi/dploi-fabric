@@ -325,6 +325,8 @@ class Configuration(object):
         nginx_dict = self.sites[site].get("nginx")
         nginx_dict["client_max_body_size"] = env_dict.get("nginx", {}).get("client_max_body_size", nginx_dict.get("client_max_body_size"))
         nginx_dict["template"] = env_dict.get("nginx", {}).get("template", nginx_dict.get("template"))
+        # adds all options in nginx except our special ones (for backwards compatibility)
+        nginx_dict["location_settings"] = dict({key: value for key, value in nginx_dict.items() if not key in ("template", "location_settings")})
 
         ##############
         # redis dict #
