@@ -1,4 +1,4 @@
-from dploi_fabric.toolbox.template import app_package_path
+from dploi_fabric.toolbox.template import app_package_path, render_template
 import os
 import posixpath
 
@@ -32,6 +32,9 @@ class Configuration(object):
         'checkout': {
             'tool': 'buildout',
         },
+        'gunicorn': {
+            'workers': 2,
+        },
         'celery': {
             'enabled': False,
             'concurrency': 1,
@@ -63,7 +66,14 @@ class Configuration(object):
         'supervisor': {
             'template': app_package_path('templates/supervisor/supervisor.conf'),
             'group_template': app_package_path('templates/supervisor/supervisor-group.conf'),
+            'gunicorn_command_template': app_package_path('templates/supervisor/gunicorn_command'),
+            'celeryd_command_template': app_package_path('templates/supervisor/celeryd_command'),
+            'celerycam_command_template': app_package_path('templates/supervisor/celerycam_command'),
         },
+        'newrelic': {
+            'enabled': False,
+            'config_file': 'app/newrelic.ini',
+        }
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -138,7 +148,11 @@ class Configuration(object):
                 attr_dict["django"]["cmd"] = " ".join(new_django_cmd)
                 if attr_dict["django"]["append_settings"]:
                     attr_dict["django"]["args"].append(" --settings=%s" % ('_gen.settings', ))
-
+            if attr_dict["newrelic"]["enabled"]:
+                attr_dict["django"]["cmd"] = posixpath.join(
+                    attr_dict.get("deployment").get("path"),
+                    "bin/newrelic-admin"
+                ) +  " run-program " + attr_dict["django"]["cmd"]
             attr_dict.update({'processes': self.processes(site, env_dict)})
             attr_dict['environment'] = self.environment(site, env_dict)
             attr_dict['environment'].setdefault('DEPLOYMENT_SITE', site)
@@ -178,13 +192,21 @@ class Configuration(object):
         """
         process_dict = {}
         site_dict = self.sites[site]
-        django_args = " ".join(site_dict.get("django").get("args", []))
-        gunicorn_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
-
+        common_cmd_context = {
+            "django_cmd": site_dict.django['cmd'],
+            "django_args": " ".join(site_dict.get("django").get("args", [])),
+        }
+        gunicorn_cmd_context = {
+            "socket": posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))), # Asserts pony project layout
+            "workers": site_dict.gunicorn['workers'],
+        }
+        gunicorn_cmd_context.update(common_cmd_context)
+        gunicorn_command_template_path = self.sites[site]['supervisor']['gunicorn_command_template']
+        gunicorn_command = render_template(gunicorn_command_template_path, gunicorn_cmd_context)
         process_dict["%s_%s_gunicorn" % (env_dict.get("user"), site)] = {
-                    'command': "%s run_gunicorn %s -w 2 -b unix:%s" % (site_dict.django['cmd'], django_args, gunicorn_socket),
+                    'command': gunicorn_command,
                     'port': None,
-                    'socket': gunicorn_socket,
+                    'socket': gunicorn_cmd_context['socket'],
                     'type': 'gunicorn',
                     'priority': 100,
                 }
@@ -199,26 +221,30 @@ class Configuration(object):
                     'priority': 60,
                 }
         if site_dict.get("celery").get("enabled"):
+            celeryd_command_context = {
+                'concurrency': site_dict.get("celery").get("concurrency"),
+                'maxtasksperchild': site_dict.get("celery").get("maxtasksperchild"),
+                'loglevel': site_dict.get("celery").get("loglevel"),
+            }
+            celeryd_command_context.update(common_cmd_context)
+            celeryd_command_template_path = self.sites[site]['supervisor']['celeryd_command_template']
+            celeryd_command = render_template(celeryd_command_template_path, celeryd_command_context)
             process_dict["%s_%s_celeryd" % (env_dict.get("user"), site)] = {
-                    'command': "%s celeryd %s -E -B -c %s --maxtasksperchild %s --loglevel=%s" % (
-                        site_dict.django['cmd'],
-                        django_args,
-                        site_dict.get("celery").get("concurrency"),
-                        site_dict.get("celery").get("maxtasksperchild"),
-                        site_dict.get("celery").get("loglevel"),
-                    ),
+                    'command': celeryd_command,
                     'port': None,
                     'socket': None,
                     'type': 'celeryd',
                     'priority': 40,
                 }
             if site_dict.get("celery").get("celerycam"):
+                celerycam_command_context = {
+                    'loglevel': site_dict.get("celery").get("loglevel"),
+                }
+                celerycam_command_context.update(common_cmd_context)
+                celerycam_command_template_path = self.sites[site]['supervisor']['celerycam_command_template']
+                celerycam_command = render_template(celerycam_command_template_path, celerycam_command_context)
                 process_dict["%s_%s_celerycam" % (env_dict.get("user"), site)] = {
-                    'command': "%s celerycam %s --loglevel=%s" % (
-                        site_dict.django['cmd'],
-                        django_args,
-                        site_dict.get("celery").get("loglevel"),
-                    ),
+                    'command': celerycam_command,
                     'port': None,
                     'socket': None,
                     'type': 'celerycam',
@@ -314,6 +340,20 @@ class Configuration(object):
         deployment_dict.update({'domains': domains})
 
         ###############
+        # Environment #
+        ###############
+
+        environment_dict = self.sites[site].get("environment")
+        for key, value in env_dict.get("environment", {}).items():
+            environment_dict[key] = value
+
+        #################
+        # Gunicorn dict #
+        #################
+        gunicorn_dict = self.sites[site].get("gunicorn")
+        gunicorn_dict["workers"] = env_dict.get("gunicorn", {}).get("workers", gunicorn_dict.get("workers"))
+
+        ###############
         # Celery dict #
         ###############
         celery_dict = self.sites[site].get("celery")
@@ -344,8 +384,35 @@ class Configuration(object):
 
         supervisor_dict = self.sites[site].get("supervisor")
         supervisor_dict["template"] = env_dict.get("supervisor", {}).get("template", supervisor_dict.get("template"))
+        supervisor_dict["group_template"] = env_dict.get("supervisor", {}).get("group_template", supervisor_dict.get("group_template"))
+        supervisor_dict["gunicorn_command_template"] = env_dict.get("supervisor", {}).get("gunicorn_command_template", supervisor_dict.get("gunicorn_command_template"))
+        supervisor_dict["celeryd_command_template"] = env_dict.get("supervisor", {}).get("celeryd_command_template", supervisor_dict.get("celeryd_command_template"))
+        supervisor_dict["celerycam_command_template"] = env_dict.get("supervisor", {}).get("celerycam_command_template", supervisor_dict.get("celerycam_command_template"))
 
-        return {'deployment': deployment_dict, 'celery': celery_dict}
+        #################
+        # newrelic dict #
+        #################
+
+        newrelic_dict = self.sites[site].get("newrelic")
+        newrelic_dict["enabled"] = env_dict.get("newrelic", {}).get("enabled", newrelic_dict.get("enabled"))
+        newrelic_dict["config_file"] = env_dict.get("newrelic", {}).get("config_file", newrelic_dict.get("config_file"))
+        if not newrelic_dict["config_file"].startswith('/'):
+            newrelic_dict["config_file"] = posixpath.abspath(posixpath.join(
+                    deployment_dict["path"],
+                    newrelic_dict["config_file"],
+                ))
+        self.sites[site]["environment"]["NEW_RELIC_CONFIG_FILE"] = newrelic_dict["config_file"]
+
+        return {
+            'deployment': deployment_dict,
+            'environment': environment_dict,
+            'gunicorn': gunicorn_dict,
+            'celery': celery_dict,
+            'nginx': nginx_dict,
+            'redis': redis_dict,
+            'supervisor': supervisor_dict,
+            'newrelic': newrelic_dict,
+        }
 
     def django_manage(self, command, site="main"):
         """

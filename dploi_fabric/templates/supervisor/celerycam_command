@@ -1,0 +1,1 @@
+{{ django_cmd }} celerycam {{ django_args }} --loglevel={{ loglevel }}

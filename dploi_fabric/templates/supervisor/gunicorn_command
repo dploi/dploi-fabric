@@ -1,0 +1,1 @@
+{{ django_cmd }} run_gunicorn {{ django_args }} -w {{ workers }} -b unix:{{ socket }}

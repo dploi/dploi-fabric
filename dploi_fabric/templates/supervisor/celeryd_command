@@ -1,0 +1,1 @@
+{{ django_cmd }} celeryd {{ django_args }} -E -B -c {{ concurrency }} --maxtasksperchild {{ maxtasksperchild }} --loglevel={{ loglevel }}
