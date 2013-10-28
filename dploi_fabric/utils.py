@@ -72,7 +72,9 @@ class Configuration(object):
         },
         'newrelic': {
             'enabled': False,
-            'config_file': 'app/newrelic.ini',
+            'config_file': 'newrelic.ini',
+            'environment_name': '',
+            'license': '',
         }
     }
     def load_sites(self, config_file_content=None, env_dict=None):
@@ -402,6 +404,13 @@ class Configuration(object):
                     newrelic_dict["config_file"],
                 ))
         self.sites[site]["environment"]["NEW_RELIC_CONFIG_FILE"] = newrelic_dict["config_file"]
+        newrelic_dict["environment_name"] = env_dict.get("newrelic", {}).get("environment_name", newrelic_dict.get("environment_name"))
+        if newrelic_dict["environment_name"]:
+            self.sites[site]["environment"]["NEW_RELIC_ENVIRONMENT"] = newrelic_dict["environment_name"]
+
+        newrelic_dict["license_key"] = env_dict.get("newrelic", {}).get("license_key", newrelic_dict.get("license_key"))
+        if newrelic_dict["license_key"]:
+            self.sites[site]["environment"]["NEW_RELIC_LICENSE_KEY"] = newrelic_dict["license_key"]
 
         return {
             'deployment': deployment_dict,
