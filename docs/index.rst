@@ -22,6 +22,7 @@ Usage:
    public/supervisor
    public/utils
    public/virtualenv
+   public/newrelic
 
 For developers:
 
