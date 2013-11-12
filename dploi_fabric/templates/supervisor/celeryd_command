@@ -1,1 +1,3 @@
-{{ django_cmd }} celeryd {{ django_args }} -E -B -c {{ concurrency }} --maxtasksperchild {{ maxtasksperchild }} --loglevel={{ loglevel }}
+{% if version == '3.1' %}{{ cmd }} --workdir={{ path }}src --app={{ celery_app }} worker{% if has_cam %} --events{% endif %} --beat --concurrency={{ concurrency }} --maxtasksperchild={{ maxtasksperchild }} --loglevel={{ loglevel }}
+{% else %}{{ django_cmd }} celeryd {{ django_args }}{% if has_cam %} -E{% endif %} -B -c {{ concurrency }} --maxtasksperchild {{ maxtasksperchild }} --loglevel={{ loglevel }}
+{% endif %}

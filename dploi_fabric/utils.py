@@ -41,6 +41,8 @@ class Configuration(object):
             'maxtasksperchild': 500,
             'loglevel': 'WARNING',
             'celerycam': False,
+            'version': None,
+            'app': 'project',
         },
         'static': {
 
@@ -223,10 +225,17 @@ class Configuration(object):
                     'priority': 60,
                 }
         if site_dict.get("celery").get("enabled"):
+            cmd = env_dict.get("path") if not site_dict.get("newrelic").get("enabled") else '%sbin/newrelic-admin run-program %s' % (env_dict.get("path"), env_dict.get("path"))
+            cmd += 'bin/celery'
             celeryd_command_context = {
                 'concurrency': site_dict.get("celery").get("concurrency"),
                 'maxtasksperchild': site_dict.get("celery").get("maxtasksperchild"),
                 'loglevel': site_dict.get("celery").get("loglevel"),
+                'path': env_dict.get("path"),
+                'version': site_dict.get("celery").get("version"),
+                'celery_app': site_dict.get("celery").get("app"),
+                'has_cam': site_dict.get("celery").get("celerycam"),
+                'cmd': cmd,
             }
             celeryd_command_context.update(common_cmd_context)
             celeryd_command_template_path = self.sites[site]['supervisor']['celeryd_command_template']
@@ -241,6 +250,10 @@ class Configuration(object):
             if site_dict.get("celery").get("celerycam"):
                 celerycam_command_context = {
                     'loglevel': site_dict.get("celery").get("loglevel"),
+                    'path': env_dict.get("path"),
+                    'version': site_dict.get("celery").get("version"),
+                    'celery_app': site_dict.get("celery").get("app"),
+                    'cmd': cmd,
                 }
                 celerycam_command_context.update(common_cmd_context)
                 celerycam_command_template_path = self.sites[site]['supervisor']['celerycam_command_template']
