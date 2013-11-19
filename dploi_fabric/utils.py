@@ -481,7 +481,7 @@ def download_media(to_dir="./tmp/media/", from_dir="../upload/media/"):
     """
     Downloads media from a remote folder, default ../uploads/ -> ./tmp/media/
 
-    * Example: upload_media:from_dir="py_src/project/media/"
+    * Example: download_media:from_dir="py_src/project/media/"
     """
     print "Downloading media from", env.host_string
     env.from_dir = from_dir
