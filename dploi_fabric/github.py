@@ -23,6 +23,7 @@ def upload_ssh_deploy_key():
     ssh_key = output.read()
 
     logged_in = False
+    headers = {}
     while not logged_in:
         try:
             default_username = subprocess.check_output(["git", "config", "--get", "github.user"]).strip()
@@ -32,7 +33,11 @@ def upload_ssh_deploy_key():
         password = getpass.getpass("Please enter your GitHub password: ")
 
         repository = env.repo.rsplit(":", 1)[-1].replace(".git", "")
-        response = json.loads(requests.get("https://api.github.com/repos/%s/keys" % repository, auth=(username, password), ).content)
+        response = requests.get("https://api.github.com/repos/%s/keys" % repository, auth=(username, password))
+        if response.status_code == 401 and response.headers.get('X-GitHub-OTP', '').startswith('required'):
+            headers['X-GitHub-OTP'] = prompt('Please enter the Two-Factor-Auth code:')
+            response = requests.get("https://api.github.com/repos/%s/keys" % repository, auth=(username, password), headers=headers)
+        response = json.loads(response.content)
 
         if 'message' in response:
             print(response['message'])
@@ -43,4 +48,4 @@ def upload_ssh_deploy_key():
     if not match:
         data = {'key': ssh_key}
         data = json.dumps(data)
-        requests.post("https://api.github.com/repos/%s/keys" % repository, auth=(username, password), data=data)
+        response = requests.post("https://api.github.com/repos/%s/keys" % repository, auth=(username, password), data=data, headers=headers)
