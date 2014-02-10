@@ -52,6 +52,10 @@ class Configuration(object):
             'appendonly': 'no',
             'template': app_package_path('templates/redis/redis.conf'),
         },
+        'memcached': {
+            'enabled': True,
+            'size': 64,
+        },
         'processes': {
 
         },
@@ -215,14 +219,14 @@ class Configuration(object):
                     'priority': 100,
                 }
 
-        memcached_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
-
-        process_dict["%s_%s_memcached" % (env_dict.get("user"), site)] = {
-                    'command': "memcached -s %s" % memcached_socket,
-                    'port': None,
-                    'socket': memcached_socket,
-                    'type': 'memcached',
-                    'priority': 60,
+        if site_dict.get("memcached").get("enabled"):
+            memcached_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
+            process_dict["%s_%s_memcached" % (env_dict.get("user"), site)] = {
+                        'command': "memcached -s %s -m %d" % (memcached_socket, int(site_dict.get("memcached").get("size"))),
+                        'port': None,
+                        'socket': memcached_socket,
+                        'type': 'memcached',
+                        'priority': 60,
                 }
         if site_dict.get("celery").get("enabled"):
             cmd = env_dict.get("path") if not site_dict.get("newrelic").get("enabled") else '%sbin/newrelic-admin run-program %s' % (env_dict.get("path"), env_dict.get("path"))
