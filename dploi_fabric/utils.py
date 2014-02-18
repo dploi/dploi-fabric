@@ -229,16 +229,17 @@ class Configuration(object):
                         'priority': 60,
                 }
         if site_dict.get("celery").get("enabled"):
+            conf = site_dict.get("celery")
             cmd = env_dict.get("path") if not site_dict.get("newrelic").get("enabled") else '%sbin/newrelic-admin run-program %s' % (env_dict.get("path"), env_dict.get("path"))
             cmd += 'bin/celery'
             celeryd_command_context = {
-                'concurrency': site_dict.get("celery").get("concurrency"),
-                'maxtasksperchild': site_dict.get("celery").get("maxtasksperchild"),
-                'loglevel': site_dict.get("celery").get("loglevel"),
+                'concurrency': conf.get("concurrency"),
+                'maxtasksperchild': conf.get("maxtasksperchild"),
+                'loglevel': conf.get("loglevel"),
                 'path': env_dict.get("path"),
-                'version': site_dict.get("celery").get("version"),
-                'celery_app': site_dict.get("celery").get("app"),
-                'has_cam': site_dict.get("celery").get("celerycam"),
+                'version': conf.get("version"),
+                'celery_app': conf.get("app"),
+                'has_cam': conf.get("celerycam"),
                 'cmd': cmd,
             }
             celeryd_command_context.update(common_cmd_context)
@@ -250,13 +251,16 @@ class Configuration(object):
                     'socket': None,
                     'type': 'celeryd',
                     'priority': 40,
+                    'stopasgroup': 'true',
+                    'killasgroup': 'true',
+                    'stopwaitsecs': conf.get('stopwaitsecs', None),
                 }
-            if site_dict.get("celery").get("celerycam"):
+            if conf.get("celerycam"):
                 celerycam_command_context = {
-                    'loglevel': site_dict.get("celery").get("loglevel"),
+                    'loglevel': conf.get("loglevel"),
                     'path': env_dict.get("path"),
-                    'version': site_dict.get("celery").get("version"),
-                    'celery_app': site_dict.get("celery").get("app"),
+                    'version': conf.get("version"),
+                    'celery_app': conf.get("app"),
                     'cmd': cmd,
                 }
                 celerycam_command_context.update(common_cmd_context)

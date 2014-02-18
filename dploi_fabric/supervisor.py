@@ -85,6 +85,9 @@ def update_config_file(dryrun=False, update_command=update):
                 'env': env_dict,
                 'priority': process_dict.get('priority', 200),
                 'autostart': 'True' if getattr(env, 'autostart', True) else 'False',
+                'killasgroup': process_dict.get('killasgroup', None),
+                'stopasgroup': process_dict.get('killasgroup', None),
+                'stopwaitsecs': process_dict.get('stopwaitsecs', None),
             })
             output += render_template(template_path, context_dict)
             groups[group_name].append(process_name)
