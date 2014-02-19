@@ -241,6 +241,7 @@ class Configuration(object):
                 'celery_app': conf.get("app"),
                 'has_cam': conf.get("celerycam"),
                 'cmd': cmd,
+                'pidfile': posixpath.normpath(posixpath.join(env_dict.get("path"), '..', 'tmp', 'celery-%s.pid' % site)),
             }
             celeryd_command_context.update(common_cmd_context)
             celeryd_command_template_path = self.sites[site]['supervisor']['celeryd_command_template']
