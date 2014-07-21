@@ -35,6 +35,7 @@ class Configuration(object):
         'gunicorn': {
             'workers': 2,
             'maxrequests': 0,
+            'timeout': None,
         },
         'celery': {
             'enabled': False,
@@ -209,6 +210,8 @@ class Configuration(object):
             "socket": posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))), # Asserts pony project layout
             "workers": site_dict.gunicorn['workers'],
             "maxrequests": site_dict.gunicorn['maxrequests'],
+            "timeout": site_dict.gunicorn['timeout'],
+
         }
         gunicorn_cmd_context.update(common_cmd_context)
         gunicorn_command_template_path = self.sites[site]['supervisor']['gunicorn_command_template']
@@ -379,6 +382,7 @@ class Configuration(object):
         gunicorn_dict = self.sites[site].get("gunicorn")
         gunicorn_dict["workers"] = env_dict.get("gunicorn", {}).get("workers", gunicorn_dict.get("workers"))
         gunicorn_dict["maxrequests"] = env_dict.get("gunicorn", {}).get("maxrequests", gunicorn_dict.get("maxrequests"))
+        gunicorn_dict["timeout"] = env_dict.get("gunicorn", {}).get("timeout", gunicorn_dict.get("timeout"))
 
         ###############
         # Celery dict #
