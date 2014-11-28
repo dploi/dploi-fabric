@@ -17,7 +17,7 @@ def update_config_file(dryrun=False):
         print redis_processes
         for process_name, process in redis_processes:
             working_directoy = posixpath.normpath(posixpath.join(env.path, '..', 'data', 'redis', process_name))
-            log_directory = posixpath.normpath(posixpath.join(env.path, '..', 'log', 'redis'))
+            log_directory = posixpath.normpath(posixpath.join(site_config['logdir'], 'log', 'redis'))
             run('mkdir -p ' + working_directoy)
             run('mkdir -p ' + log_directory)
             context_dict = site_config

@@ -3,26 +3,26 @@ from copy import copy
 from fabric.decorators import task
 from fabric.api import run, put, env
 from dploi_fabric.toolbox.template import render_template
-from dploi_fabric.utils import config
+from dploi_fabric.utils import config, safe_put
 import posixpath
 
 
 @task
 def stop():
     for site, site_config in config.sites.items():
-        run('sudo supervisorctl stop %s:*' %  get_group_name(site, site_config))
+        run('%s stop %s:*' % (site_config['supervisor']['supervisorctl_command'], get_group_name(site, site_config)))
 
 
 @task
 def start():
     for site, site_config in config.sites.items():
-        run('sudo supervisorctl start %s:*' % get_group_name(site, site_config))
+        run('%s start %s:*' % (site_config['supervisor']['supervisorctl_command'], get_group_name(site, site_config)))
 
 
 @task
 def restart():
     for site, site_config in config.sites.items():
-        run('sudo supervisorctl restart %s:*' % get_group_name(site, site_config))
+        run('%s restart %s:*' % (site_config['supervisor']['supervisorctl_command'], get_group_name(site, site_config)))
 
 
 @task
@@ -35,7 +35,7 @@ def status():
     for site, site_config in config.sites.items():
         group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl status %s:%s' % (group_name, process_name))
+            run('%s status %s:%s' % (site_config['supervisor']['supervisorctl_command'], group_name, process_name))
 
 
 @task
@@ -43,7 +43,7 @@ def add():
     for site, site_config in config.sites.items():
         group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl add %s:%s' % (group_name, process_name))
+            run('%s add %s:%s' % (site_config['supervisor']['supervisorctl_command'], group_name, process_name))
 
 
 @task
@@ -51,7 +51,7 @@ def update():
     for site, site_config in config.sites.items():
         group_name = get_group_name(site, site_config)
         for process_name, process_cmd in site_config.processes.items():
-            run('sudo supervisorctl update %s:%s' % (group_name, process_name))
+            run('%s update %s:%s' % (site_config['supervisor']['supervisorctl_command'], group_name, process_name))
 
 
 def get_group_name(site, site_config):
@@ -59,7 +59,7 @@ def get_group_name(site, site_config):
 
 
 @task
-def update_config_file(dryrun=False, update_command=update):
+def update_config_file(dryrun=False, update_command=update, load_config=True):
     output = ''
     groups = {}
     for site, site_config in config.sites.items():
@@ -92,10 +92,20 @@ def update_config_file(dryrun=False, update_command=update):
             output += render_template(template_path, context_dict)
             groups[group_name].append(process_name)
     output += render_template(group_template_path, {'groups': groups})
-    path = posixpath.abspath(posixpath.join(config.sites["main"].deployment['path'], '..', 'config', 'supervisor.conf'))
+    conf_path = posixpath.abspath(posixpath.join(config.sites["main"].deployment['path'], '..', 'config'))
+    path = posixpath.join(conf_path, 'supervisor.conf')
+
+    daemon_template_path = site_config['supervisor']['daemon_template']
+    supervisord_conf_path = posixpath.join(conf_path, 'supervisord.conf')
+    supervisord_conf_output = render_template(daemon_template_path, copy(site_config))
+
     if dryrun:
         print path + ':'
         print output
+        print daemon_template_path + ':'
+        print supervisord_conf_output
     else:
-        put(StringIO.StringIO(output), path)
-        update_command()
+        safe_put(StringIO.StringIO(output), path)
+        safe_put(StringIO.StringIO(supervisord_conf_output), supervisord_conf_path)
+        if load_config:
+            update_command()

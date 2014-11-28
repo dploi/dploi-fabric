@@ -1,2 +1,2 @@
 {{ django_cmd }} run_gunicorn {{ django_args }} -w {{ workers }} --max-requests {{ maxrequests }}{% spaceless %}
-{% endspaceless %}{% if timeout %} --timeout {{ timeout }}{% endif %} -b unix:{{ socket }}
+{% endspaceless %}{% if timeout %} --timeout {{ timeout }}{% endif %} -b {{ bind }}
