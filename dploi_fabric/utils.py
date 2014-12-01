@@ -3,7 +3,7 @@ import os
 import posixpath
 
 import StringIO
-from fabric.operations import run, local
+from fabric.operations import run, local, put
 from fabric.api import task, env, get
 from fabric.contrib.files import exists
 from fabric.state import _AttributeDict
@@ -36,6 +36,7 @@ class Configuration(object):
             'workers': 2,
             'maxrequests': 0,
             'timeout': None,
+            'bind': None,
         },
         'celery': {
             'enabled': False,
@@ -68,22 +69,28 @@ class Configuration(object):
 
         },
         'nginx': {
+            'enabled': True,
             'client_max_body_size': '10m',
             'template': app_package_path('templates/nginx/nginx.conf'),
         },
         'supervisor': {
             'template': app_package_path('templates/supervisor/supervisor.conf'),
+            'daemon_template': app_package_path('templates/supervisor/supervisord.conf'),
             'group_template': app_package_path('templates/supervisor/supervisor-group.conf'),
             'gunicorn_command_template': app_package_path('templates/supervisor/gunicorn_command'),
             'celeryd_command_template': app_package_path('templates/supervisor/celeryd_command'),
             'celerycam_command_template': app_package_path('templates/supervisor/celerycam_command'),
+            'supervisorctl_command': None,
+            'supervisord_command': None,
+            'use_global_supervisord': False,
         },
         'newrelic': {
             'enabled': False,
             'config_file': 'newrelic.ini',
             'environment_name': '',
             'license': '',
-        }
+        },
+        'logdir': None,
     }
     def load_sites(self, config_file_content=None, env_dict=None):
         """
@@ -113,7 +120,7 @@ class Configuration(object):
         for site in config.section_namespaces("django") or ["main"]:
             attr_dict = self.defaults.copy()
             for key, value in attr_dict.items():
-                attr_dict[key] = _AttributeDict(value.copy())
+                attr_dict[key] = None if value is None else _AttributeDict(value.copy())
             for section in config.sections():
                 section = section.split(":")[0]
                 if self.defaults.get(section) is None:
@@ -206,8 +213,14 @@ class Configuration(object):
             "django_cmd": site_dict.django['cmd'],
             "django_args": " ".join(site_dict.get("django").get("args", [])),
         }
+        socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site)))  # Asserts pony project layout
+        if site_dict.gunicorn['bind']:
+            bind = site_dict.gunicorn['bind']
+        else:
+            bind = 'socket:{}'.format(socket)
         gunicorn_cmd_context = {
-            "socket": posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_gunicorn.sock" % (env_dict.get("user"), site))), # Asserts pony project layout
+            "socket": socket,
+            "bind": bind,
             "workers": site_dict.gunicorn['workers'],
             "maxrequests": site_dict.gunicorn['maxrequests'],
             "timeout": site_dict.gunicorn['timeout'],
@@ -340,6 +353,8 @@ class Configuration(object):
             'big_body_endpoints': env_dict.get('big_body_endpoints', []),
             'home': '/home/%s' %  env_dict.get("user"),
         }
+        deployment_dict['logdir'] = env_dict.get("logdir") or os.path.join(deployment_dict['home'], 'log')
+
 
         if not env_dict.get("databases"):
             deployment_dict["databases"] = {
@@ -383,6 +398,7 @@ class Configuration(object):
         gunicorn_dict["workers"] = env_dict.get("gunicorn", {}).get("workers", gunicorn_dict.get("workers"))
         gunicorn_dict["maxrequests"] = env_dict.get("gunicorn", {}).get("maxrequests", gunicorn_dict.get("maxrequests"))
         gunicorn_dict["timeout"] = env_dict.get("gunicorn", {}).get("timeout", gunicorn_dict.get("timeout"))
+        gunicorn_dict["bind"] = env_dict.get("gunicorn", {}).get("bind", gunicorn_dict.get("bind"))
 
         ###############
         # Celery dict #
@@ -397,6 +413,7 @@ class Configuration(object):
         ##############
 
         nginx_dict = self.sites[site].get("nginx")
+        nginx_dict["enabled"] = env_dict.get("nginx", {}).get("enabled", nginx_dict.get("enabled"))
         nginx_dict["location_settings"] = {
             "client_max_body_size": env_dict.get("nginx", {}).get("client_max_body_size", nginx_dict.get("client_max_body_size")),
         }
@@ -409,16 +426,36 @@ class Configuration(object):
         redis_dict = self.sites[site].get("redis")
         redis_dict["template"] = env_dict.get("redis", {}).get("template", redis_dict.get("template"))
 
+        ##################
+        # memcached dict #
+        ##################
+
+        memcached_dict = self.sites[site].get("memcached")
+        memcached_dict["enabled"] = env_dict.get("memcached", {}).get("enabled", memcached_dict.get("enabled"))
+        memcached_dict["size"] = env_dict.get("memcached", {}).get("size", memcached_dict.get("size"))
+
         ###################
         # supervisor dict #
         ###################
 
         supervisor_dict = self.sites[site].get("supervisor")
         supervisor_dict["template"] = env_dict.get("supervisor", {}).get("template", supervisor_dict.get("template"))
+        supervisor_dict["daemon_template"] = env_dict.get("supervisor", {}).get("daemon_template", supervisor_dict.get("daemon_template"))
         supervisor_dict["group_template"] = env_dict.get("supervisor", {}).get("group_template", supervisor_dict.get("group_template"))
         supervisor_dict["gunicorn_command_template"] = env_dict.get("supervisor", {}).get("gunicorn_command_template", supervisor_dict.get("gunicorn_command_template"))
         supervisor_dict["celeryd_command_template"] = env_dict.get("supervisor", {}).get("celeryd_command_template", supervisor_dict.get("celeryd_command_template"))
-        supervisor_dict["celerycam_command_template"] = env_dict.get("supervisor", {}).get("celerycam_command_template", supervisor_dict.get("celerycam_command_template"))
+        supervisor_dict["celeryd_command_template"] = env_dict.get("supervisor", {}).get("celeryd_command_template", supervisor_dict.get("celeryd_command_template"))
+        supervisor_dict["supervisorctl_command"] = env_dict.get("supervisor", {}).get("supervisorctl_command", supervisor_dict.get("supervisorctl_command"))
+        supervisor_dict["supervisord_command"] = env_dict.get("supervisor", {}).get("supervisord_command", supervisor_dict.get("supervisord_command"))
+        supervisor_dict["use_global_supervisord"] = env_dict.get("supervisor", {}).get("use_global_supervisord", supervisor_dict.get("use_global_supervisord"))
+        if supervisor_dict["supervisorctl_command"] is None:
+            if supervisor_dict["use_global_supervisord"]:
+                supervisor_dict["supervisorctl_command"] = 'sudo supervisorctl'
+            else:
+                supervisor_dict["supervisorctl_command"] = 'supervisorctl --config={}../config/supervisord.conf'.format(deployment_dict['path'])
+
+        if supervisor_dict["supervisord_command"] is None and not supervisor_dict["use_global_supervisord"]:
+            supervisor_dict["supervisord_command"] = 'supervisord -c {}../config/supervisord.conf'.format(deployment_dict['path'])
 
         #################
         # newrelic dict #
@@ -448,6 +485,7 @@ class Configuration(object):
             'celery': celery_dict,
             'nginx': nginx_dict,
             'redis': redis_dict,
+            'memcached': memcached_dict,
             'supervisor': supervisor_dict,
             'newrelic': newrelic_dict,
         }
@@ -518,3 +556,17 @@ def upload_media(from_dir="./tmp/media/", to_dir="../upload/media/"):
 @task
 def use_local_config_ini():
     env.use_local_config_ini = True
+
+@task
+def safe_put(*args, **kwargs):
+    """
+    a version of put that makes sure the directory exists first.
+    :return:
+    """
+    if len(args) >= 2:
+        dst_path = args[1]
+    else:
+        dst_path = kwargs.get('remote_path', None)
+    if dst_path:
+        run('mkdir -p {}'.format(os.path.dirname(dst_path)))
+    return put(*args, **kwargs)
