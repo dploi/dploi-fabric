@@ -6,6 +6,7 @@ from dploi_fabric import git
 from github import upload_ssh_deploy_key
 from supervisor import update_config_file as supervisor_update_config_file
 from nginx import update_config_file as nginx_update_config_file
+from redis import update_config_file as redis_update_config_file
 import django_utils
 from .utils import config
 
@@ -25,7 +26,21 @@ def init():
         git.update()
     elif env.repo.startswith('ssh+svn'):
         run('cd %(path)s; svn co %(repo)s' % env)
-    tool = config.sites['main'].get('checkout',{}).get('tool')
+
+    if config.sites['main']['redis']['enabled']:
+        redis_update_config_file()
+
+    if config.sites["main"]['supervisor']['use_global_supervisord'] == True:
+        supervisor_update_config_file()
+    else:
+        supervisor_update_config_file(load_config=False)
+        run(config.sites["main"]['supervisor']['supervisord_command'])
+        supervisor_update_config_file(load_config=True)
+
+    if config.sites["main"]['nginx']['enabled'] == True:
+        nginx_update_config_file()
+
+    tool = config.sites['main'].get('checkout', {}).get('tool')
     if tool == "buildout":
         run('cd %(path)s; sh init.sh -c %(buildout_cfg)s' % env)
         django_utils.append_settings()
@@ -39,16 +54,6 @@ def init():
         print "WARNING: Couldnt find [checkout] tool - please set it to either virtualenv or buildout in your config.ini"
         print "Got tool: %s" % tool
         django_utils.append_settings()
-    if config.sites["main"]['supervisor']['use_global_supervisord'] == True:
-        supervisor_update_config_file()
-    else:
-        supervisor_update_config_file(load_config=False)
-        run(config.sites["main"]['supervisor']['supervisord_command'])
-        supervisor_update_config_file(load_config=True)
-
-    if config.sites["main"]['nginx']['enabled'] == True:
-        nginx_update_config_file()
-
 
 
 @task
