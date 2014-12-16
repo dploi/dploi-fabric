@@ -8,3 +8,4 @@ README.html
 *.egg
 .Python
 docs/_build
+.idea/
