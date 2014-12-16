@@ -10,6 +10,7 @@ import os
 from .messages import CAUTION
 from .utils import config
 
+
 @task
 def update():
     test = run("cd %(path)s; git --no-pager diff --stat" % env)
@@ -26,10 +27,10 @@ def update():
         download_diff = prompt("What do you want to do?", default="D")
         if download_diff.lower() == "d":
             diff = run(("cd %(path)s; git diff --color .") % env)
-            for i in range(1,50):
+            for i in range(1, 50):
                 print
             print diff
-            for i in range(1,5):
+            for i in range(1, 5):
                 print
             exit()
         elif download_diff.lower() == "e":
@@ -44,13 +45,16 @@ def update():
         run("cd %(path)s; git submodule update" % env)
     append_settings()
 
+
 @task
 def diff(what=''):
     run(("cd %(path)s; git --no-pager diff " + what) % env)
 
+
 @task
 def status():
     run("cd %(path)s; git status" % env)
+
 
 @task
 def reset():
@@ -59,6 +63,7 @@ def reset():
     """
     run("cd %(path)s; find . -iname '*.pyc' -delete" % env)
     run("cd %(path)s; git reset --hard HEAD" % env)
+
 
 @task
 def incoming(remote='origin', branch=None):
