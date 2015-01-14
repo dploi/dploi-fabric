@@ -11,7 +11,7 @@ from fabric.state import _AttributeDict
 
 from .toolbox.datastructures import EnvConfigParser
 from .messages import DOMAIN_DICT_DEPRECATION_WARNING
-from .git import local_branch_is_dirty, local_branch_matches_remote
+
 
 STATIC_COLLECTED = "../static/"
 DATA_DIRECTORY = "../upload/"
@@ -575,8 +575,12 @@ def safe_put(*args, **kwargs):
 
 @task
 def gulp_deploy(*args, **kwargs):
+    # Import here to avoid circular references
+    from .git import local_branch_is_dirty, local_branch_matches_remote
+
     if local_branch_is_dirty() or not local_branch_matches_remote():
-        print "Please make sure that local branch is not dirty and matches the remote (deployment) branch."
+        print ("Please make sure that local branch is not dirty and "
+               "matches the remote (deployment) branch.")
     else:
         print "Preparing files (CSS/JS)"
         local('compass compile --production')

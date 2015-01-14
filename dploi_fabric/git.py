@@ -77,9 +77,14 @@ def incoming(remote='origin', branch=None):
 
 def local_branch_is_dirty(ignore_untracked_files=True):
     untracked_files = '--untracked-files=no' if ignore_untracked_files else ''
-    return local('git status %s --porcelain' % untracked_files, capture=True) != ''
+    git_status = local(
+        'git status %s --porcelain' % untracked_files, capture=True)
+    return git_status != ''
 
 
 def local_branch_matches_remote():
-    local_branch = local('git rev-parse --symbolic-full-name --abbrev-ref HEAD')
+    local_branch = local(
+        'git rev-parse --symbolic-full-name --abbrev-ref HEAD',
+        capture=True).strip()
+    target_branch = env.branch.strip()
     return local_branch == env.branch
