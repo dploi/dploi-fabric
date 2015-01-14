@@ -87,4 +87,4 @@ def local_branch_matches_remote():
         'git rev-parse --symbolic-full-name --abbrev-ref HEAD',
         capture=True).strip()
     target_branch = env.branch.strip()
-    return local_branch == env.branch
+    return local_branch == target_branch

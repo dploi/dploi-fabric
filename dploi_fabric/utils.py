@@ -574,7 +574,7 @@ def safe_put(*args, **kwargs):
 
 
 @task
-def gulp_deploy(*args, **kwargs):
+def gulp_deploy(css_dir='private', *args, **kwargs):
     # Import here to avoid circular references
     from .git import local_branch_is_dirty, local_branch_matches_remote
 
@@ -583,7 +583,7 @@ def gulp_deploy(*args, **kwargs):
                "matches the remote (deployment) branch.")
     else:
         print "Preparing files (CSS/JS)"
-        local('compass compile --production')
+        local('compass compile {}'.format(css_dir))
         # Replace compass with 'gulp' when front-end is ready
         upload_media('./static/css/', '../static/css/')
         upload_media('./static/js/', '../static/js/')
