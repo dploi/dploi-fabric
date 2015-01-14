@@ -1,5 +1,5 @@
 from fabric.operations import run, prompt
-from fabric.api import task, env, get, put
+from fabric.api import task, env, get, put, local
 from fabric.contrib.files import exists
 import ConfigParser
 import StringIO
@@ -9,6 +9,7 @@ from django_utils import django_settings_file, append_settings
 import os
 from .messages import CAUTION
 from .utils import config
+
 
 @task
 def update():
@@ -26,10 +27,10 @@ def update():
         download_diff = prompt("What do you want to do?", default="D")
         if download_diff.lower() == "d":
             diff = run(("cd %(path)s; git diff --color .") % env)
-            for i in range(1,50):
+            for i in range(1, 50):
                 print
             print diff
-            for i in range(1,5):
+            for i in range(1, 5):
                 print
             exit()
         elif download_diff.lower() == "e":
@@ -44,13 +45,16 @@ def update():
         run("cd %(path)s; git submodule update" % env)
     append_settings()
 
+
 @task
 def diff(what=''):
     run(("cd %(path)s; git --no-pager diff " + what) % env)
 
+
 @task
 def status():
     run("cd %(path)s; git status" % env)
+
 
 @task
 def reset():
@@ -60,6 +64,7 @@ def reset():
     run("cd %(path)s; find . -iname '*.pyc' -delete" % env)
     run("cd %(path)s; git reset --hard HEAD" % env)
 
+
 @task
 def incoming(remote='origin', branch=None):
     """
@@ -68,3 +73,18 @@ def incoming(remote='origin', branch=None):
     if not branch:
         branch = env.branch
     run(("cd %(path)s; git fetch " + remote + " && git log --oneline .." + remote + '/' + branch) % env)
+
+
+def local_branch_is_dirty(ignore_untracked_files=True):
+    untracked_files = '--untracked-files=no' if ignore_untracked_files else ''
+    git_status = local(
+        'git status %s --porcelain' % untracked_files, capture=True)
+    return git_status != ''
+
+
+def local_branch_matches_remote():
+    local_branch = local(
+        'git rev-parse --symbolic-full-name --abbrev-ref HEAD',
+        capture=True).strip()
+    target_branch = env.branch.strip()
+    return local_branch == target_branch

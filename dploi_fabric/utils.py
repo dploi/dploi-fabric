@@ -9,8 +9,9 @@ from fabric.contrib.files import exists
 from fabric.state import _AttributeDict
 
 
-from dploi_fabric.toolbox.datastructures import EnvConfigParser
-from dploi_fabric.messages import DOMAIN_DICT_DEPRECATION_WARNING
+from .toolbox.datastructures import EnvConfigParser
+from .messages import DOMAIN_DICT_DEPRECATION_WARNING
+
 
 STATIC_COLLECTED = "../static/"
 DATA_DIRECTORY = "../upload/"
@@ -570,3 +571,19 @@ def safe_put(*args, **kwargs):
     if dst_path:
         run('mkdir -p {}'.format(os.path.dirname(dst_path)))
     return put(*args, **kwargs)
+
+
+@task
+def gulp_deploy(css_dir='private', *args, **kwargs):
+    # Import here to avoid circular references
+    from .git import local_branch_is_dirty, local_branch_matches_remote
+
+    if local_branch_is_dirty() or not local_branch_matches_remote():
+        print ("Please make sure that local branch is not dirty and "
+               "matches the remote (deployment) branch.")
+    else:
+        print "Preparing files (CSS/JS)"
+        local('compass compile {}'.format(css_dir))
+        # Replace compass with 'gulp' when front-end is ready
+        upload_media('./static/css/', '../static/css/')
+        upload_media('./static/js/', '../static/js/')
