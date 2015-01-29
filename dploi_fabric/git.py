@@ -72,7 +72,7 @@ def incoming(remote='origin', branch=None):
     """
     if not branch:
         branch = env.branch
-    run(("cd %(path)s; git fetch " + remote + " && git log --oneline --pretty=format:'%C(yellow)%h%C(reset) - %s %C(bold blue)<%an>%C(reset)' .." + remote + '/' + branch) % env)
+    run(("cd %(path)s; git fetch " + remote + " && git log --oneline --pretty=format:'%%C(yellow)%%h%%C(reset) - %%s %%C(bold blue)<%%an>%%C(reset)' .." + remote + '/' + branch) % env)
 
 
 def local_branch_is_dirty(ignore_untracked_files=True):
