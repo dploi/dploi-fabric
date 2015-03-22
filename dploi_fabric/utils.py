@@ -218,7 +218,7 @@ class Configuration(object):
         if site_dict.gunicorn['bind']:
             bind = site_dict.gunicorn['bind']
         else:
-            bind = 'socket:{}'.format(socket)
+            bind = 'unix:{}'.format(socket)
         gunicorn_cmd_context = {
             "socket": socket,
             "bind": bind,
