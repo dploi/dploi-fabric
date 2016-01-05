@@ -58,7 +58,13 @@ def collectstatic(staticdir='static'): # As defined in puppet config
     # TODO: Use utils.config
     run(('cd %(path)s; mkdir -p ' + staticdir) % env)
     manage("collectstatic", "--noinput", "--link")
-    
+
+@task
+def load_fixture(file_path):
+    remote_path = put(file_path, '~/tmp/')[0]
+    manage('loaddata %s' % remote_path)
+    run('rm %s' % remote_path)
+
 @task
 def append_settings():
     # TODO: make it work with multisites!
