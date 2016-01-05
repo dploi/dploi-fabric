@@ -1,3 +1,13 @@
-{% if version == '3.1' %}{{ cmd }} --workdir={{ path }}src --app={{ celery_app }} events --camera=djcelery.snapshot.Camera
-{% else %}{{ django_cmd }} celerycam {{ django_args }} --loglevel={{ loglevel }}
+{% if version == '3.1' %}
+{{ cmd }}
+events
+--workdir={{ path }}src
+--app={{ celery_app }}
+--camera=djcelery.snapshot.Camera
+--loglevel={{ loglevel }}
+{% else %}
+{{ django_cmd }}
+celerycam
+{{ django_args }}
+--loglevel={{ loglevel }}
 {% endif %}

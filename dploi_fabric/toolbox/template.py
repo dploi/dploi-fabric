@@ -9,12 +9,17 @@ import dploi_fabric
 
 settings.configure(DEBUG=True, TEMPLATE_DEBUG=True)
 
-def render_template(path, context):
+
+def render_template(path, context, strip_newlines=False):
     if not isinstance(context, Context):
         context = Context(context)
     with open(path) as template_file:
-        template = Template(template_file.read())
-    return template.render(context)
+        template_data = template_file.read()
+
+        if strip_newlines:
+            template_data = u' '.join(template_data.splitlines())
+        template = Template(template_data)
+    return template.render(context).lstrip()
 
 
 def app_package_path(path):

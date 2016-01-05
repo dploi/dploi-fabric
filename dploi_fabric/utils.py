@@ -38,6 +38,7 @@ class Configuration(object):
             'maxrequests': 0,
             'timeout': None,
             'bind': None,
+            'version': None,
         },
         'celery': {
             'enabled': False,
@@ -45,6 +46,10 @@ class Configuration(object):
             'maxtasksperchild': 500,
             'loglevel': 'WARNING',
             'celerycam': False,
+            'extra_options': '',
+            # Beat is enabled by default but only used
+            # if celery is enabled.
+            'celerybeat': True,
             'version': None,
             'app': 'project',
         },
@@ -219,17 +224,26 @@ class Configuration(object):
             bind = site_dict.gunicorn['bind']
         else:
             bind = 'unix:{}'.format(socket)
+
+        cmd = env_dict.get("path") if not site_dict.get("newrelic").get("enabled") else '%sbin/newrelic-admin run-program %s' % (env_dict.get("path"), env_dict.get("path"))
+        cmd += 'bin/gunicorn'
+
         gunicorn_cmd_context = {
+            'cmd': cmd,
             "socket": socket,
             "bind": bind,
             "workers": site_dict.gunicorn['workers'],
             "maxrequests": site_dict.gunicorn['maxrequests'],
             "timeout": site_dict.gunicorn['timeout'],
-
+            "version": site_dict.gunicorn['version'],
         }
         gunicorn_cmd_context.update(common_cmd_context)
         gunicorn_command_template_path = self.sites[site]['supervisor']['gunicorn_command_template']
-        gunicorn_command = render_template(gunicorn_command_template_path, gunicorn_cmd_context)
+        gunicorn_command = render_template(
+            gunicorn_command_template_path,
+            gunicorn_cmd_context,
+            strip_newlines=True,
+        )
         process_dict["%s_%s_gunicorn" % (env_dict.get("user"), site)] = {
                     'command': gunicorn_command,
                     'port': None,
@@ -255,16 +269,22 @@ class Configuration(object):
                 'concurrency': conf.get("concurrency"),
                 'maxtasksperchild': conf.get("maxtasksperchild"),
                 'loglevel': conf.get("loglevel"),
+                'extra_options': conf.get('extra_options'),
                 'path': env_dict.get("path"),
                 'version': conf.get("version"),
                 'celery_app': conf.get("app"),
                 'has_cam': conf.get("celerycam"),
+                'enable_beat': conf.get("celerybeat"),
                 'cmd': cmd,
                 'pidfile': posixpath.normpath(posixpath.join(env_dict.get("path"), '..', 'tmp', 'celery-%s.pid' % site)),
             }
             celeryd_command_context.update(common_cmd_context)
             celeryd_command_template_path = self.sites[site]['supervisor']['celeryd_command_template']
-            celeryd_command = render_template(celeryd_command_template_path, celeryd_command_context)
+            celeryd_command = render_template(
+                celeryd_command_template_path,
+                celeryd_command_context,
+                strip_newlines=True,
+            )
             process_dict["%s_%s_celeryd" % (env_dict.get("user"), site)] = {
                     'command': celeryd_command,
                     'port': None,
@@ -285,7 +305,11 @@ class Configuration(object):
                 }
                 celerycam_command_context.update(common_cmd_context)
                 celerycam_command_template_path = self.sites[site]['supervisor']['celerycam_command_template']
-                celerycam_command = render_template(celerycam_command_template_path, celerycam_command_context)
+                celerycam_command = render_template(
+                    celerycam_command_template_path,
+                    celerycam_command_context,
+                    strip_newlines=True,
+                )
                 process_dict["%s_%s_celerycam" % (env_dict.get("user"), site)] = {
                     'command': celerycam_command,
                     'port': None,

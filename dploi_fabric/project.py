@@ -34,6 +34,7 @@ def init():
         supervisor_update_config_file()
     else:
         supervisor_update_config_file(load_config=False)
+        # This can fail if the supervisor daemon is already running.
         run(config.sites["main"]['supervisor']['supervisord_command'])
         supervisor_update_config_file(load_config=True)
 
