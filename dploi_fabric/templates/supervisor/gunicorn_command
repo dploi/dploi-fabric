@@ -1,2 +1,15 @@
-{{ django_cmd }} run_gunicorn {{ django_args }} -w {{ workers }} --max-requests {{ maxrequests }}{% spaceless %}
-{% endspaceless %}{% if timeout %} --timeout {{ timeout }}{% endif %} -b {{ bind }}
+{% if version == '19' %}
+{{ cmd }}
+wsgi
+-w {{ workers }}
+--max-requests {{ maxrequests }}
+{% if timeout %} --timeout {{ timeout }}{% endif %}
+-b {{ bind }}
+{% else %}
+{{ django_cmd }}
+run_gunicorn {{ django_args }}
+-w {{ workers }}
+--max-requests {{ maxrequests }}
+{% if timeout %}--timeout {{ timeout }}{% endif %}
+-b {{ bind }}
+{% endif %}

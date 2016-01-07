@@ -1,3 +1,20 @@
-{% if version == '3.1' %}{{ cmd }} --workdir={{ path }}src --app={{ celery_app }} worker{% if has_cam %} --events{% endif %} --beat --concurrency={{ concurrency }} --maxtasksperchild={{ maxtasksperchild }} --loglevel={{ loglevel }}
-{% else %}{{ django_cmd }} celeryd {{ django_args }}{% if has_cam %} -E{% endif %} -B -c {{ concurrency }} --maxtasksperchild {{ maxtasksperchild }} --loglevel={{ loglevel }}{% if pidfile %} --pidfile={{ pidfile }}{% endif %}
+{% if version == '3.1' %}
+{{ cmd }}
+worker
+{% if extra_options %}{{ extra_options }}{% endif %}
+--workdir={{ path }}src
+--app={{ celery_app }}
+{% if has_cam %}--events{% endif %}
+{% if enable_beat %}--beat{% endif %}
+--concurrency={{ concurrency }}
+--maxtasksperchild={{ maxtasksperchild }}
+--loglevel={{ loglevel }}
+{% else %}
+{{ django_cmd }} celeryd {{ django_args }}
+{% if has_cam %} -E{% endif %}
+{% if enable_beat %}-B{% endif %}
+-c {{ concurrency }}
+--maxtasksperchild {{ maxtasksperchild }}
+--loglevel={{ loglevel }}
+{% if pidfile %} --pidfile={{ pidfile }}{% endif %}
 {% endif %}
