@@ -123,12 +123,29 @@ class Configuration(object):
         config = EnvConfigParser()
         config.readfp(output)
         self._sites = {}
+
+        variables = {
+            'static_collected': STATIC_COLLECTED,
+            'data_directory': DATA_DIRECTORY,
+        }
+
         for site in config.section_namespaces("django") or ["main"]:
             attr_dict = self.defaults.copy()
             for key, value in attr_dict.items():
                 attr_dict[key] = None if value is None else _AttributeDict(value.copy())
             for section in config.sections():
                 section = section.split(":")[0]
+
+                is_custom_process = section in env_dict.get('custom_processes') or []
+
+                if is_custom_process:
+                    attr_dict[section] = {
+                        'enabled': config.getboolean(section, 'enabled', env=site),
+                        'command': config.get(section, 'command', env=site) % variables,
+                        'django': config.getboolean(section, 'django', env=site),
+                    }
+                    continue
+
                 if self.defaults.get(section) is None:
                     print "Caution: Section %s is not supported, skipped" % section
                     continue
@@ -141,10 +158,6 @@ class Configuration(object):
                     elif type(setting) == float:
                         value = config.getfloat(section, option, env=site)
                     else:
-                        variables = {
-                            'static_collected': STATIC_COLLECTED,
-                            'data_directory': DATA_DIRECTORY,
-                        }
                         value = config.get(section, option, env=site) % variables
                     attr_dict[section][option] = value
             self.sites[site] = _AttributeDict(attr_dict)
@@ -251,6 +264,28 @@ class Configuration(object):
                     'type': 'gunicorn',
                     'priority': 100,
                 }
+
+        custom_processes = env_dict.get("custom_processes") or []
+
+        for process in custom_processes:
+            process_config = site_dict[process]
+
+            if not process_config.get("enabled"):
+                continue
+
+            custom_command = process_config['command']
+
+            if process_config.get('django'):
+                custom_command = '%s %s' % (site_dict.django['cmd'], custom_command)
+
+            process_name = "%s_%s_%s" % (env_dict.get("user"), site, process)
+            process_dict[process_name] = {
+                'command': custom_command,
+                'type': 'custom',
+                'priority': 100,
+                'port': None,
+                'socket': None,
+            }
 
         if site_dict.get("memcached").get("enabled"):
             memcached_socket = posixpath.normpath(posixpath.join(env_dict.get("path"), "..", "tmp", "%s_%s_memcached.sock" % (env_dict.get("user"), site))) # Asserts pony project layout
