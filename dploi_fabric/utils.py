@@ -46,6 +46,7 @@ class Configuration(object):
             'maxtasksperchild': 500,
             'loglevel': 'WARNING',
             'celerycam': False,
+            'celerycam-frequency': 1.0,
             'extra_options': '',
             # Beat is enabled by default but only used
             # if celery is enabled.
@@ -337,6 +338,7 @@ class Configuration(object):
                     'version': conf.get("version"),
                     'celery_app': conf.get("app"),
                     'cmd': cmd,
+                    'frequency': conf.get('celerycam-frequency'),
                 }
                 celerycam_command_context.update(common_cmd_context)
                 celerycam_command_template_path = self.sites[site]['supervisor']['celerycam_command_template']

@@ -3,6 +3,7 @@
 events
 --workdir={{ path }}src
 --app={{ celery_app }}
+--frequency={{ frequency }}
 --camera=djcelery.snapshot.Camera
 --loglevel={{ loglevel }}
 {% else %}
