@@ -130,6 +130,8 @@ class Configuration(object):
             'data_directory': DATA_DIRECTORY,
         }
 
+        env_config = env.get('config', {})
+
         for site in config.section_namespaces("django") or ["main"]:
             attr_dict = self.defaults.copy()
             for key, value in attr_dict.items():
@@ -147,10 +149,17 @@ class Configuration(object):
                     }
                     continue
 
+                env_section_config = env_config.get(section, {})
+
                 if self.defaults.get(section) is None:
                     print "Caution: Section %s is not supported, skipped" % section
                     continue
                 for option, default_value in config.items(section, env=site):
+                    if option in env_section_config:
+                        # If the section/option has been configured in deployment.py
+                        # give precedence to that.
+                        attr_dict[section][option] = env_section_config[option]
+                        continue
                     setting = self.defaults.get(section).get(option)
                     if type(setting) == bool:
                         value = config.getboolean(section, option, env=site)
