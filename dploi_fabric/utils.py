@@ -137,7 +137,7 @@ class Configuration(object):
             for section in config.sections():
                 section = section.split(":")[0]
 
-                is_custom_process = section in env_dict.get('custom_processes') or []
+                is_custom_process = section in (env_dict.get('custom_processes') or [])
 
                 if is_custom_process:
                     attr_dict[section] = {
